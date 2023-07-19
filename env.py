@@ -6,6 +6,10 @@ from finta import TA
 
 
 class PredictionGameEnvironment:
+    """
+    A prediction game environment for the RL agent.
+    """
+    
     def __init__(self, dataset_df, features, ta_period, window_size, episode_length, prediction_period):
         self.features = features
         price_idx = self.features.index('close')
