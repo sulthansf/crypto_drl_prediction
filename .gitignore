@@ -1,0 +1,5 @@
+# Ignore
+.vscode/*
+*.code-workspace
+*.editorconfig
+*.pyc
