@@ -124,7 +124,7 @@ class PredictionGameDRLAgent:
             # Evaluate the agent every eval_frequency episodes
             if episode % eval_frequency == 0:
                 evaluation_reward = self.evaluate(env)
-                print("Evaluation Reward: {}".format(evaluation_reward))
+                print("=== Evaluation Reward: {} ===".format(evaluation_reward))
 
     def train_q_network(self, replay_buffer, batch_size):
         """

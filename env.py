@@ -108,11 +108,8 @@ class PredictionGameEnvironment:
         self.step_count += 1
         if (self.step_count >= self.episode_length) or (self.balance <= 0):
             self.done = True
-            print("Action: {}, Reward: {}, Balance: {}, Current Price: {}, Prediction Price: {}, Winning Action: {}".format(
-                self.action, self.reward, self.balance, self.current_price, self.prediction_price, self.winning_action))
-            print("Losing actions: {}, Neutral actions: {}, Winning actions: {}".format(
-                self.action_results_count[0], self.action_results_count[1], self.action_results_count[2]))
-            print("Episode length: {}/{}".format(self.step_count, self.episode_length))
+            print("Episode length: {}/{}, Losing actions: {}, Neutral actions: {}, Winning actions: {}".format(self.step_count,
+                  self.episode_length, self.action_results_count[0], self.action_results_count[1], self.action_results_count[2]))
         return self.state, self.reward, self.done
 
     def calculate_reward(self, action):
