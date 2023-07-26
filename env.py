@@ -9,10 +9,11 @@ class PredictionGameEnvironment:
     """
     A prediction game environment for the RL agent.
     """
-    
+
     def __init__(self, dataset_df, features, ta_period, window_size, episode_length, prediction_period):
         self.features = features
         price_idx = self.features.index('close')
+        self.scaler = RobustScaler()
         self.dataset, self.price_data = self.process_data(
             dataset_df, ta_period, price_idx)
         self.num_data = len(self.dataset)
@@ -32,7 +33,7 @@ class PredictionGameEnvironment:
         """
         self.done = False
         self.step_count = 0
-        self.cumulative_reward = 10.0
+        self.balance = 10.0
         self.reward = None
         self.action = None
         self.winning_action = None
@@ -81,7 +82,7 @@ class PredictionGameEnvironment:
         dataset_df = dataset_df.iloc[num_drop:]
         dataset = dataset_df[self.features].to_numpy()
         price_data = dataset[:, price_idx]
-        dataset_scaled = RobustScaler().fit_transform(dataset)
+        dataset_scaled = self.scaler.fit_transform(dataset)
         return dataset_scaled, price_data
 
     def step(self, action):
@@ -99,10 +100,10 @@ class PredictionGameEnvironment:
         if self.done:
             return self.state, self.reward, self.done
         self.reward = self.calculate_reward(action)
-        self.cumulative_reward += self.reward
+        self.balance += self.reward
         self.state_id, self.state = self.update_state()
         self.step_count += 1
-        if (self.step_count >= self.episode_length) or (self.cumulative_reward <= 0):
+        if (self.step_count >= self.episode_length) or (self.balance <= 0):
             self.done = True
         return self.state, self.reward, self.done
 
@@ -155,3 +156,12 @@ class PredictionGameEnvironment:
             action_space (list): The available actions.
         """
         return self.action_space
+
+    def get_scaler(self):
+        """
+        Return the scaler.
+
+        Returns:
+            scaler (sklearn.preprocessing.RobustScaler): The scaler.
+        """
+        return self.scaler
