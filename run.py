@@ -5,8 +5,7 @@ from agent import PredictionGameDRLAgent
 # ...
 
 # Define the state shape and number of actions
-state_shape = (window_size, num_features)
-num_actions = len(env.get_action_space())
+state_shape = (window_size, len(features))
 
 # Create the environment
 env = PredictionGameEnvironment(

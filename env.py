@@ -37,6 +37,9 @@ class PredictionGameEnvironment:
         self.reward = None
         self.action = None
         self.winning_action = None
+        self.current_price = None
+        self.prediction_price = None
+        self.action_results_count = [0.0, 0.0, 0.0]
         self.state_id, self.state = self.update_state()
         return self.state
 
@@ -105,6 +108,11 @@ class PredictionGameEnvironment:
         self.step_count += 1
         if (self.step_count >= self.episode_length) or (self.balance <= 0):
             self.done = True
+            print("Action: {}, Reward: {}, Balance: {}, Current Price: {}, Prediction Price: {}, Winning Action: {}".format(
+                self.action, self.reward, self.balance, self.current_price, self.prediction_price, self.winning_action))
+            print("Losing actions: {}, Neutral actions: {}, Winning actions: {}".format(
+                self.action_results_count[0], self.action_results_count[1], self.action_results_count[2]))
+            print("Episode length: {}/{}".format(self.step_count, self.episode_length))
         return self.state, self.reward, self.done
 
     def calculate_reward(self, action):
@@ -122,15 +130,19 @@ class PredictionGameEnvironment:
         else:
             self.action = action
         prediction_id = self.state_id + self.prediction_period
-        current_price = self.price_data[self.state_id]
-        prediction_price = self.price_data[prediction_id]
-        self.winning_action = np.sign(prediction_price - current_price)
+        self.current_price = self.price_data[self.state_id]
+        self.prediction_price = self.price_data[prediction_id]
+        self.winning_action = np.sign(
+            self.prediction_price - self.current_price)
         if self.action*self.winning_action < 0:
             reward = self.reward_space[0]
+            self.action_results_count[0] += 1
         elif self.action*self.winning_action == 0:
             reward = self.reward_space[1]
+            self.action_results_count[1] += 1
         elif self.action*self.winning_action > 0:
             reward = self.reward_space[2]
+            self.action_results_count[2] += 1
         return reward
 
     def update_state(self):

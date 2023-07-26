@@ -70,22 +70,23 @@ class PredictionGameDRLAgent:
         """
         self.target_q_network.set_weights(self.q_network.get_weights())
 
-    def choose_action(self, state):
+    def choose_action(self, state, exploration=True):
         """
         Choose an action based on the current state.
 
         Args:
             state (np.ndarray): The current state.
+            exploration (bool): Whether to perform exploration (choose random actions) or not.
 
         Returns:
             action (float): The chosen action.
         """
-        if np.random.rand() <= self.epsilon:
+        if exploration and np.random.rand() <= self.epsilon:
             return self.action_space[random.choice(range(self.num_actions))]
         else:
-            return self.action_space[np.argmax(self.q_network.predict(np.array([state])))]
+            return self.action_space[np.argmax(self.q_network.predict(np.array([state]), verbose=0))]
 
-    def train(self, env, episodes, batch_size):
+    def train(self, env, episodes, batch_size, eval_frequency=10):
         """
         Train the DRL agent on the environment.
 
@@ -117,7 +118,13 @@ class PredictionGameDRLAgent:
             self.epsilon = max(
                 self.epsilon_min, self.epsilon * self.epsilon_decay)
 
-            print(f"Episode: {episode + 1}, Total Reward: {total_reward}")
+            print("Episode: {}/{} | Total Reward: {}".format(
+                episode+1, episodes, total_reward))
+
+            # Evaluate the agent every eval_frequency episodes
+            if episode % eval_frequency == 0:
+                evaluation_reward = self.evaluate(env)
+                print("Evaluation Reward: {}".format(evaluation_reward))
 
     def train_q_network(self, replay_buffer, batch_size):
         """
@@ -133,14 +140,36 @@ class PredictionGameDRLAgent:
         states = np.array(states)
         next_states = np.array(next_states)
 
-        current_q = self.q_network.predict(states)
-        next_q = self.target_q_network.predict(next_states)
+        current_q = self.q_network.predict(states, verbose=0)
+        next_q = self.target_q_network.predict(next_states, verbose=0)
 
         for i in range(batch_size):
             target = rewards[i]
             if not dones[i]:
                 target += self.gamma * np.max(next_q[i])
 
-            current_q[i][actions[i]] = target
+            current_q[i][self.action_space.index(actions[i])] = target
 
         self.q_network.fit(states, current_q, verbose=0)
+
+    def evaluate(self, env):
+        """
+        Evaluate the DRL agent on the environment for one episode.
+
+        Args:
+            env (PredictionGameEnvironment): The environment to evaluate the agent on.
+
+        Returns:
+            evaluation_reward (float): The total reward obtained during the evaluation episode.
+        """
+        state = env.reset()
+        done = False
+        evaluation_reward = 0
+
+        while not done:
+            action = self.choose_action(state, exploration=False)
+            next_state, reward, done = env.step(action)
+            evaluation_reward += reward
+            state = next_state
+
+        return evaluation_reward
