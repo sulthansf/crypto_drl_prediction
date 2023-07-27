@@ -1,4 +1,5 @@
 import random
+import time
 import pandas as pd
 import numpy as np
 from sklearn.preprocessing import RobustScaler
@@ -11,7 +12,7 @@ class PredictionGameEnvironment:
     A prediction game environment for the RL agent.
     """
 
-    def __init__(self, dataset_df, features, ta_period, window_size, episode_length, prediction_period):
+    def __init__(self, dataset_df, features, ta_period, window_size, episode_length, prediction_period, logging=False):
         self.features = features
         price_idx = self.features.index('close')
         self.scaler = RobustScaler()
@@ -24,6 +25,8 @@ class PredictionGameEnvironment:
         self.action_space = [-1.0, 0.0, 1.0]
         self.reward_space = [-1.0, 0.0, 0.7]
         self.prev_episode_lengths = deque(maxlen=25)
+        self.logging = logging
+        self.log_file = 'env_log_' + time.strftime("%Y%m%d-%H%M%S") + '.txt'
         self.reset()
 
     def reset(self):
@@ -111,8 +114,11 @@ class PredictionGameEnvironment:
         if (self.step_count >= self.episode_length) or (self.balance <= 0):
             self.done = True
             self.prev_episode_lengths.append(self.step_count)
-            print("Episode length: {}/{}, Losing actions: {}, Neutral actions: {}, Winning actions: {}, Mean Episode Length (25): {}".format(self.step_count,
-                  self.episode_length, self.action_results_count[0], self.action_results_count[1], self.action_results_count[2], np.mean(self.prev_episode_lengths)))
+            log_str = "Episode length: {}/{}, Losing actions: {}, Neutral actions: {}, Winning actions: {}, Mean Episode Length (25): {}".format(
+                self.step_count, self.episode_length, self.action_results_count[0], self.action_results_count[1], self.action_results_count[2], np.mean(self.prev_episode_lengths))
+            if self.logging:
+                self.log(log_str)
+            print(log_str)
         return self.state, self.reward, self.done
 
     def calculate_reward(self, action):
@@ -177,3 +183,13 @@ class PredictionGameEnvironment:
             scaler (sklearn.preprocessing.RobustScaler): The scaler.
         """
         return self.scaler
+
+    def log(self, line):
+        """
+        Log a line to the log file.
+
+        Args:
+            line (str): The line to log to the log file.
+        """
+        with open(self.log_file, "a") as f:
+            f.write(line + "\n")

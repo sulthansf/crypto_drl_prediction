@@ -1,4 +1,5 @@
 import random
+import time
 import numpy as np
 import tensorflow as tf
 from tensorflow.keras import layers
@@ -6,7 +7,7 @@ from collections import deque
 
 
 class PredictionGameDRLAgent:
-    def __init__(self, state_shape, action_space, epsilon_initial=1.0, epsilon_decay=0.995, epsilon_min=0.01, gamma=0.99, update_frequency=10):
+    def __init__(self, state_shape, action_space, epsilon_initial=1.0, epsilon_decay=0.995, epsilon_min=0.01, gamma=0.99, update_frequency=10, logging=False):
         """
         Initialize the DRL agent.
 
@@ -28,6 +29,8 @@ class PredictionGameDRLAgent:
         self.epsilon_min = epsilon_min
         self.gamma = gamma
         self.update_frequency = update_frequency
+        self.logging = logging
+        self.log_file = 'agent_log_' + time.strftime("%Y%m%d-%H%M%S") + '.txt'
 
         # Create the Q-network and target Q-network
         self.q_network = self.create_q_network()
@@ -127,13 +130,20 @@ class PredictionGameDRLAgent:
             self.epsilon = max(
                 self.epsilon_min, self.epsilon * self.epsilon_decay)
 
-            print("Episode: {}/{} | Total Reward: {}".format(
-                episode+1, episodes, total_reward))
+            log_str = "Episode: {}/{} | Total Reward: {}".format(
+                episode+1, episodes, total_reward)
+            if self.logging:
+                self.log(log_str)
+            print(log_str)
 
             # Evaluate the agent every eval_frequency episodes
             if episode % eval_frequency == 0:
                 evaluation_reward = self.evaluate(env)
-                print("=== Evaluation Reward: {} ===".format(evaluation_reward))
+                log_str = "=== Evaluation Reward: {} ===".format(
+                    evaluation_reward)
+                if self.logging:
+                    self.log(log_str)
+                print(log_str)
 
     def train_q_network(self, replay_buffer, batch_size):
         """
@@ -191,3 +201,23 @@ class PredictionGameDRLAgent:
             path (str): The path to save the agent to.
         """
         self.q_network.save(path)
+
+    def load_q_network(self, path):
+        """
+        Load the DRL agent.
+
+        Args:
+            path (str): The path to load the agent from.
+        """
+        self.q_network = tf.keras.models.load_model(path)
+        self.target_q_network = tf.keras.models.load_model(path)
+
+    def log(self, line):
+        """
+        Log a line to the log file.
+
+        Args:
+            line (str): The line to log to the log file.
+        """
+        with open(self.log_file, "a") as f:
+            f.write(line + "\n")
