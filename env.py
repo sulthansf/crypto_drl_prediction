@@ -2,6 +2,7 @@ import random
 import pandas as pd
 import numpy as np
 from sklearn.preprocessing import RobustScaler
+from collections import deque
 from finta import TA
 
 
@@ -22,6 +23,7 @@ class PredictionGameEnvironment:
         self.prediction_period = prediction_period
         self.action_space = [-1.0, 0.0, 1.0]
         self.reward_space = [-1.0, 0.0, 0.7]
+        self.prev_episode_lengths = deque(maxlen=25)
         self.reset()
 
     def reset(self):
@@ -83,9 +85,9 @@ class PredictionGameEnvironment:
         dataset_df = dataset_df.dropna()
         num_drop = 5*ta_period
         dataset_df = dataset_df.iloc[num_drop:]
-        dataset = dataset_df[self.features].to_numpy()
+        dataset = dataset_df[self.features].to_numpy().astype(np.float32)
         price_data = dataset[:, price_idx]
-        dataset_scaled = self.scaler.fit_transform(dataset)
+        dataset_scaled = self.scaler.fit_transform(dataset).astype(np.float32)
         return dataset_scaled, price_data
 
     def step(self, action):
@@ -108,8 +110,9 @@ class PredictionGameEnvironment:
         self.step_count += 1
         if (self.step_count >= self.episode_length) or (self.balance <= 0):
             self.done = True
-            print("Episode length: {}/{}, Losing actions: {}, Neutral actions: {}, Winning actions: {}".format(self.step_count,
-                  self.episode_length, self.action_results_count[0], self.action_results_count[1], self.action_results_count[2]))
+            self.prev_episode_lengths.append(self.step_count)
+            print("Episode length: {}/{}, Losing actions: {}, Neutral actions: {}, Winning actions: {}, Mean Episode Length (25): {}".format(self.step_count,
+                  self.episode_length, self.action_results_count[0], self.action_results_count[1], self.action_results_count[2], np.mean(self.prev_episode_lengths)))
         return self.state, self.reward, self.done
 
     def calculate_reward(self, action):

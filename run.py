@@ -14,9 +14,9 @@ action_space = env.get_action_space()
 
 # Create the agent
 agent = PredictionGameDRLAgent(state_shape, action_space, epsilon_initial=1.0,
-                               epsilon_decay=0.995, epsilon_min=0.01, gamma=0.99)
+                               epsilon_decay=0.995, epsilon_min=0.01, gamma=0.99, update_frequency=10)
 
 # Train the agent on the environment
 episodes = 1000
-batch_size = 32
+batch_size = 64
 agent.train(env, episodes, batch_size)

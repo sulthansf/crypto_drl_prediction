@@ -6,7 +6,7 @@ from collections import deque
 
 
 class PredictionGameDRLAgent:
-    def __init__(self, state_shape, action_space, epsilon_initial=1.0, epsilon_decay=0.995, epsilon_min=0.01, gamma=0.99):
+    def __init__(self, state_shape, action_space, epsilon_initial=1.0, epsilon_decay=0.995, epsilon_min=0.01, gamma=0.99, update_frequency=10):
         """
         Initialize the DRL agent.
 
@@ -17,6 +17,7 @@ class PredictionGameDRLAgent:
             epsilon_decay (float): The decay rate of epsilon.
             epsilon_min (float): The minimum value of epsilon.
             gamma (float): The discount factor.
+            update_frequency (int): The number of steps between each Q-network update.
         """
         # Set the inputs
         self.state_shape = state_shape
@@ -26,6 +27,7 @@ class PredictionGameDRLAgent:
         self.epsilon_decay = epsilon_decay
         self.epsilon_min = epsilon_min
         self.gamma = gamma
+        self.update_frequency = update_frequency
 
         # Create the Q-network and target Q-network
         self.q_network = self.create_q_network()
@@ -62,6 +64,9 @@ class PredictionGameDRLAgent:
         # Compile the model
         model.compile(optimizer='adam', loss='mse')
 
+        # Print the model summary
+        model.summary()
+
         return model
 
     def update_target_q_network(self):
@@ -94,8 +99,10 @@ class PredictionGameDRLAgent:
             env (PredictionGameEnvironment): The environment to train the agent on.
             episodes (int): The number of episodes to train the agent.
             batch_size (int): The batch size for training the agent.
+            eval_frequency (int): The number of episodes between each evaluation.
         """
         replay_buffer = deque(maxlen=10000)
+        steps_since_update = 0
 
         # Train the agent on the environment
         for episode in range(episodes):
@@ -110,11 +117,13 @@ class PredictionGameDRLAgent:
 
                 replay_buffer.append((state, action, reward, next_state, done))
                 state = next_state
+                steps_since_update += 1
 
-                if len(replay_buffer) >= batch_size:
+                if (len(replay_buffer) >= batch_size) and (steps_since_update >= self.update_frequency):
                     self.train_q_network(replay_buffer, batch_size)
+                    self.update_target_q_network()
+                    steps_since_update = 0
 
-            self.update_target_q_network()
             self.epsilon = max(
                 self.epsilon_min, self.epsilon * self.epsilon_decay)
 
