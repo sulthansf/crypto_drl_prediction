@@ -154,7 +154,7 @@ class PredictionGameEnvironment:
             state (np.ndarray): The state corresponding to the selected state_id.
         """
         state_id = random.randrange(
-            self.window_size - 1, self.num_data)
+            self.window_size - 1, self.num_data - self.prediction_period)
         start = state_id - self.window_size + 1
         end = state_id + 1
         state = self.dataset[start:end, :]
