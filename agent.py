@@ -182,3 +182,12 @@ class PredictionGameDRLAgent:
             state = next_state
 
         return evaluation_reward
+
+    def save_q_network(self, path):
+        """
+        Save the DRL agent.
+
+        Args:
+            path (str): The path to save the agent to.
+        """
+        self.q_network.save(path)
