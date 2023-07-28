@@ -1,9 +1,20 @@
+import gc
 import random
 import time
 import numpy as np
 import tensorflow as tf
 from tensorflow.keras import layers
 from collections import deque
+
+
+class ClearMemory(tf.keras.callbacks.Callback):
+    """
+    Clear the memory after each epoch.
+    """
+
+    def on_epoch_end(self, epoch, logs=None):
+        gc.collect()
+        tf.keras.backend.clear_session()
 
 
 class PredictionGameDRLAgent:
@@ -60,8 +71,10 @@ class PredictionGameDRLAgent:
 
         # Convolutional Layers
         model.add(layers.Conv1D(filters=32, kernel_size=3,
-                                activation='relu', input_shape=self.state_shape))
-        model.add(layers.Conv1D(filters=64, kernel_size=3, activation='relu'))
+                  input_shape=self.state_shape))
+        model.add(layers.Activation('leaky_relu'))
+        model.add(layers.Conv1D(filters=64, kernel_size=3))
+        model.add(layers.Activation('leaky_relu'))
         model.add(layers.MaxPooling1D(pool_size=2))
 
         # Recurrent Layer (LSTM)
@@ -69,11 +82,13 @@ class PredictionGameDRLAgent:
         model.add(layers.LSTM(64))
 
         # Dense Layers
-        model.add(layers.Dense(64, activation='relu'))
-        model.add(layers.Dense(self.num_actions, activation='linear'))
+        model.add(layers.Dense(64))
+        model.add(layers.Activation('leaky_relu'))
+        model.add(layers.Dense(self.num_actions))
 
         # Compile the model
-        model.compile(optimizer='adam', loss='mse')
+        model.compile(optimizer=tf.keras.optimizers.Adam(
+            learning_rate=0.0003), loss='mse')
 
         # Print the model summary
         model.summary()
@@ -100,7 +115,7 @@ class PredictionGameDRLAgent:
         if exploration and np.random.rand() <= self.epsilon:
             return self.action_space[random.choice(range(self.num_actions))]
         else:
-            return self.action_space[np.argmax(self.q_network.predict(np.array([state]), verbose=0))]
+            return self.action_space[np.argmax(self.q_network.predict(np.array([state]), verbose=0, callbacks=[ClearMemory()]))]
 
     def train(self, env, episodes, batch_size, eval_frequency=10):
         """
@@ -169,8 +184,10 @@ class PredictionGameDRLAgent:
         states = np.array(states)
         next_states = np.array(next_states)
 
-        current_q = self.q_network.predict(states, verbose=0)
-        next_q = self.target_q_network.predict(next_states, verbose=0)
+        current_q = self.q_network.predict(
+            states, verbose=0, callbacks=[ClearMemory()])
+        next_q = self.target_q_network.predict(
+            next_states, verbose=0, callbacks=[ClearMemory()])
 
         for i in range(batch_size):
             target = rewards[i]
@@ -179,7 +196,8 @@ class PredictionGameDRLAgent:
 
             current_q[i][self.action_space.index(actions[i])] = target
 
-        self.q_network.fit(states, current_q, verbose=0)
+        self.q_network.fit(states, current_q, verbose=0,
+                           callbacks=[ClearMemory()])
 
     def evaluate(self, env):
         """
