@@ -7,7 +7,7 @@ from agent import PredictionGameDRLAgent
 def main():
 
     # Set the inputs
-    dataset_df = joblib.load('ETH_1000_days_5_min.bin')
+    dataset_df = joblib.load('datasets/ETHUSDT_1000_days_5_min.bin')
     features = ['open', 'high', 'low', 'close', 'volume', 'bb_upper',
                 'bb_middle', 'bb_lower', 'macd', 'signal', 'rsi',  'stoch_k', 'stoch_d']
     ta_period = 12
