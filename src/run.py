@@ -16,19 +16,22 @@ def main():
     prediction_period = 1
     state_shape = (window_size, len(features))
     timestr = time.strftime("%Y%m%d-%H%M%S")
+    agent_log_file = 'log/agent_log_' + timestr + '.txt'
+    env_log_file = 'log/env_log_' + timestr + '.txt'
+    scaler_file = 'scalers/scaler_' + timestr + '.bin'
+    q_network_file = 'models/q_network_' + timestr
 
     # Create the environment
-    env = PredictionGameEnvironment(
-        dataset_df, features, ta_period, window_size, episode_length, prediction_period, logging=True)
+    env = PredictionGameEnvironment(dataset_df, features, ta_period, window_size,
+                                    episode_length, prediction_period, verbose=2, logging=True, log_file=env_log_file)
     action_space = env.get_action_space()
 
     # Create the agent
-    agent = PredictionGameDRLAgent(state_shape, action_space, epsilon_initial=1.0,
-                                   epsilon_decay=0.995, epsilon_min=0.01, gamma=0.99, update_frequency=10, logging=True)
+    agent = PredictionGameDRLAgent(state_shape, action_space, epsilon_initial=1.0, epsilon_decay=0.995,
+                                   epsilon_min=0.01, gamma=0.99, update_frequency=10, verbose=2, logging=True, log_file=agent_log_file)
 
     # Save scaler
-    joblib.dump(env.get_scaler(), 'scaler_drl_' +
-                timestr + '.bin', compress=True)
+    joblib.dump(env.get_scaler(), scaler_file, compress=True)
 
     # Train the agent on the environment
     episodes = 1000
@@ -36,7 +39,7 @@ def main():
     agent.train(env, episodes, batch_size)
 
     # Save the agent q-network
-    agent.save_q_network('q_network_drl_' + timestr + '.h5')
+    agent.save_q_network(q_network_file)
 
 
 if __name__ == '__main__':

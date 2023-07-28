@@ -7,7 +7,7 @@ from collections import deque
 
 
 class PredictionGameDRLAgent:
-    def __init__(self, state_shape, action_space, epsilon_initial=1.0, epsilon_decay=0.995, epsilon_min=0.01, gamma=0.99, update_frequency=10, logging=False):
+    def __init__(self, state_shape, action_space, epsilon_initial=1.0, epsilon_decay=0.995, epsilon_min=0.01, gamma=0.99, update_frequency=10, verbose=1, logging=False, log_file=None):
         """
         Initialize the DRL agent.
 
@@ -19,6 +19,9 @@ class PredictionGameDRLAgent:
             epsilon_min (float): The minimum value of epsilon.
             gamma (float): The discount factor.
             update_frequency (int): The number of steps between each Q-network update.
+            verbose (int): The verbosity level.
+            logging (bool): Whether to log the training process or not.
+            log_file (str): The path to the log file.
         """
         # Set the inputs
         self.state_shape = state_shape
@@ -29,8 +32,13 @@ class PredictionGameDRLAgent:
         self.epsilon_min = epsilon_min
         self.gamma = gamma
         self.update_frequency = update_frequency
+        self.verbose = verbose
         self.logging = logging
-        self.log_file = 'agent_log_' + time.strftime("%Y%m%d-%H%M%S") + '.txt'
+        if log_file:
+            self.log_file = log_file
+        else:
+            self.log_file = 'log/agent_log_' + \
+                time.strftime("%Y%m%d-%H%M%S") + '.txt'
 
         # Create the Q-network and target Q-network
         self.q_network = self.create_q_network()
@@ -134,7 +142,8 @@ class PredictionGameDRLAgent:
                 episode+1, episodes, total_reward)
             if self.logging:
                 self.log(log_str)
-            print(log_str)
+            if self.verbose > 1:
+                print(log_str)
 
             # Evaluate the agent every eval_frequency episodes
             if episode % eval_frequency == 0:
@@ -143,7 +152,8 @@ class PredictionGameDRLAgent:
                     evaluation_reward)
                 if self.logging:
                     self.log(log_str)
-                print(log_str)
+                if self.verbose > 0:
+                    print(log_str)
 
     def train_q_network(self, replay_buffer, batch_size):
         """

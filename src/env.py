@@ -12,7 +12,21 @@ class PredictionGameEnvironment:
     A prediction game environment for the RL agent.
     """
 
-    def __init__(self, dataset_df, features, ta_period, window_size, episode_length, prediction_period, logging=False):
+    def __init__(self, dataset_df, features, ta_period, window_size, episode_length, prediction_period, verbose=1, logging=False, log_file=None):
+        """
+        Initialize the environment.
+
+        Args:
+            dataset_df (pd.DataFrame): The input dataset as a pandas DataFrame.
+            features (list): The list of features to use for training.
+            ta_period (int): The period used for calculating technical indicators.
+            window_size (int): The size of the window for the state.
+            episode_length (int): The length of an episode.
+            prediction_period (int): The period used for predicting the price.
+            verbose (int): The verbosity level (0, 1 or 2).
+            logging (bool): Indicates whether to log the training process.
+            log_file (str): The path to the log file.
+        """
         self.features = features
         price_idx = self.features.index('close')
         self.scaler = RobustScaler()
@@ -25,8 +39,13 @@ class PredictionGameEnvironment:
         self.action_space = [-1.0, 0.0, 1.0]
         self.reward_space = [-1.0, 0.0, 0.7]
         self.prev_episode_lengths = deque(maxlen=25)
+        self.verbose = verbose
         self.logging = logging
-        self.log_file = 'env_log_' + time.strftime("%Y%m%d-%H%M%S") + '.txt'
+        if log_file:
+            self.log_file = log_file
+        else:
+            self.log_file = 'log/env_log_' + \
+                time.strftime("%Y%m%d-%H%M%S") + '.txt'
         self.reset()
 
     def reset(self):
@@ -118,7 +137,8 @@ class PredictionGameEnvironment:
                 self.step_count, self.episode_length, self.action_results_count[0], self.action_results_count[1], self.action_results_count[2], np.mean(self.prev_episode_lengths))
             if self.logging:
                 self.log(log_str)
-            print(log_str)
+            if self.verbose > 1:
+                print(log_str)
         return self.state, self.reward, self.done
 
     def calculate_reward(self, action):
