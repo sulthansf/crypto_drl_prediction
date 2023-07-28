@@ -34,8 +34,8 @@ def main():
     joblib.dump(env.get_scaler(), scaler_file, compress=True)
 
     # Train the agent on the environment
-    episodes = 1000
-    batch_size = 64
+    episodes = 5000
+    batch_size = 128
     agent.train(env, episodes, batch_size)
 
     # Save the agent q-network
