@@ -15,7 +15,7 @@ def main():
     episode_length = 1000
     prediction_period = 1
     state_shape = (window_size, len(features))
-    timestr = time.strftime("%Y%m%d-%H%M%S")
+    timestr = time.strftime("%Y%m%d_%H%M%S")
     agent_log_file = '../log/agent_log_' + timestr + '.txt'
     env_log_file = '../log/env_log_' + timestr + '.txt'
     scaler_file = '../scalers/scaler_' + timestr + '.bin'
