@@ -18,7 +18,7 @@ class ClearMemory(tf.keras.callbacks.Callback):
 
 
 class PredictionGameDRLAgent:
-    def __init__(self, state_shape, action_space, epsilon_initial=1.0, epsilon_decay=0.995, epsilon_min=0.01, gamma=0.99, update_frequency=10, verbose=1, logging=False, log_file=None):
+    def __init__(self, state_shape, action_space, epsilon_initial=1.0, epsilon_decay=0.995, epsilon_min=0.01, gamma=0.99, update_frequency=10, verbose=1, logging=False, log_file=None, auto_save=True, save_file=None):
         """
         Initialize the DRL agent.
 
@@ -33,6 +33,8 @@ class PredictionGameDRLAgent:
             verbose (int): The verbosity level.
             logging (bool): Whether to log the training process or not.
             log_file (str): The path to the log file.
+            auto_save (bool): Whether to automatically save the Q-network or not.
+            save_file (str): The path to save the Q-network to.
         """
         # Set the inputs
         self.state_shape = state_shape
@@ -45,11 +47,17 @@ class PredictionGameDRLAgent:
         self.update_frequency = update_frequency
         self.verbose = verbose
         self.logging = logging
+        self.auto_save = auto_save
         if log_file:
             self.log_file = log_file
         else:
             self.log_file = 'log/agent_log_' + \
-                time.strftime("%Y%m%d-%H%M%S") + '.txt'
+                time.strftime("%Y%m%d_%H%M%S") + '.txt'
+        if save_file:
+            self.save_file = save_file
+        else:
+            self.save_file = 'models/q_network_' + \
+                time.strftime("%Y%m%d_%H%M%S") + '.keras'
 
         # Create the Q-network and target Q-network
         self.q_network = self.create_q_network()
@@ -129,6 +137,7 @@ class PredictionGameDRLAgent:
         """
         replay_buffer = deque(maxlen=10000)
         steps_since_update = 0
+        highest_evaluation_reward = 0
 
         # Train the agent on the environment
         for episode in range(episodes):
@@ -169,6 +178,16 @@ class PredictionGameDRLAgent:
                     self.log(log_str)
                 if self.verbose > 0:
                     print(log_str)
+                if evaluation_reward > highest_evaluation_reward:
+                    highest_evaluation_reward = evaluation_reward
+                    if self.auto_save:
+                        self.save_q_network(self.save_file)
+                        log_str = "=== Saved Q-Network with Evaluation Reward: {} ===".format(
+                            evaluation_reward)
+                        if self.logging:
+                            self.log(log_str)
+                        if self.verbose > 0:
+                            print(log_str)
 
     def train_q_network(self, replay_buffer, batch_size):
         """
