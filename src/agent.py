@@ -86,7 +86,7 @@ class PredictionGameDRLAgent:
         model.add(layers.MaxPooling1D(pool_size=2))
 
         # Recurrent Layer (LSTM)
-        # model.add(layers.LSTM(128, return_sequences=True))
+        model.add(layers.LSTM(128, return_sequences=True))
         model.add(layers.LSTM(64))
 
         # Dense Layers
