@@ -27,8 +27,8 @@ def main():
     action_space = env.get_action_space()
 
     # Create the agent
-    agent = PredictionGameDRLAgent(state_shape, action_space, epsilon_initial=1.0, epsilon_decay=0.995,
-                                   epsilon_min=0.01, gamma=0.99, update_frequency=10, verbose=2, logging=True, log_file=agent_log_file)
+    agent = PredictionGameDRLAgent(state_shape, action_space, epsilon_initial=1.0, epsilon_decay=0.995, epsilon_min=0.01, gamma=0.99,
+                                   update_frequency=10, verbose=2, logging=True, log_file=agent_log_file, auto_save=True, save_file=q_network_file)
 
     # Save scaler
     joblib.dump(env.get_scaler(), scaler_file, compress=True)
@@ -37,9 +37,6 @@ def main():
     episodes = 5000
     batch_size = 128
     agent.train(env, episodes, batch_size)
-
-    # Save the agent q-network
-    agent.save_q_network(q_network_file)
 
 
 if __name__ == '__main__':
