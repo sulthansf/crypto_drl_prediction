@@ -44,7 +44,7 @@ class PredictionGameEnvironment:
         if log_file:
             self.log_file = log_file
         else:
-            self.log_file = 'log/env_log_' + \
+            self.log_file = '../../log/env_log_' + \
                 time.strftime("%Y%m%d_%H%M%S") + '.txt'
         self.reset()
 

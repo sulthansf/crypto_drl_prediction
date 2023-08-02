@@ -51,12 +51,12 @@ class PredictionGameDRLAgent:
         if log_file:
             self.log_file = log_file
         else:
-            self.log_file = 'log/agent_log_' + \
+            self.log_file = '../../log/agent_log_' + \
                 time.strftime("%Y%m%d_%H%M%S") + '.txt'
         if save_file:
             self.save_file = save_file
         else:
-            self.save_file = 'models/q_network_' + \
+            self.save_file = '../../models/q_network_' + \
                 time.strftime("%Y%m%d_%H%M%S") + '.keras'
 
         # Create the Q-network and target Q-network
