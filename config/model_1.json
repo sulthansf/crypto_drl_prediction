@@ -1,0 +1,29 @@
+{
+    "model_name": "",
+    "scaler_name": "",
+    "symbol": "BTCUSDT",
+    "interval": 5,
+    "ta_period": 14,
+    "window_size": 36,
+    "prediction_period": 6,
+    "features": [
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume",
+        "bb_upper",
+        "bb_middle",
+        "bb_lower",
+        "macd",
+        "signal",
+        "rsi",
+        "stoch_k",
+        "stoch_d"
+    ],
+    "action_space": [
+        -1.0,
+        0.0,
+        1.0
+    ]
+}
