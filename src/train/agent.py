@@ -18,7 +18,7 @@ class ClearMemory(tf.keras.callbacks.Callback):
 
 
 class PredictionGameDRLAgent:
-    def __init__(self, state_shape, action_space, epsilon_initial=1.0, epsilon_decay=0.995, epsilon_min=0.01, gamma=0.99, update_frequency=10, verbose=1, logging=False, log_file=None, auto_save=True, save_file=None):
+    def __init__(self, state_shape, action_space, epsilon_initial=1.0, epsilon_decay=0.995, epsilon_min=0.01, gamma=0.99, update_frequency=10, verbose=1, logging=False, log_path=None, auto_save=True, save_path=None):
         """
         Initialize the DRL agent.
 
@@ -32,9 +32,9 @@ class PredictionGameDRLAgent:
             update_frequency (int): The number of steps between each Q-network update.
             verbose (int): The verbosity level.
             logging (bool): Whether to log the training process or not.
-            log_file (str): The path to the log file.
+            log_path (str): The path to the log file.
             auto_save (bool): Whether to automatically save the Q-network or not.
-            save_file (str): The path to save the Q-network to.
+            save_path (str): The path to save the Q-network to.
         """
         # Set the inputs
         self.state_shape = state_shape
@@ -48,15 +48,15 @@ class PredictionGameDRLAgent:
         self.verbose = verbose
         self.logging = logging
         self.auto_save = auto_save
-        if log_file:
-            self.log_file = log_file
+        if log_path:
+            self.log_path = log_path
         else:
-            self.log_file = '../../log/agent_log_' + \
+            self.log_path = '../../log/agent_log_' + \
                 time.strftime("%Y%m%d_%H%M%S") + '.txt'
-        if save_file:
-            self.save_file = save_file
+        if save_path:
+            self.save_path = save_path
         else:
-            self.save_file = '../../models/q_network_' + \
+            self.save_path = '../../models/q_network_' + \
                 time.strftime("%Y%m%d_%H%M%S") + '.keras'
 
         # Create the Q-network and target Q-network
@@ -181,7 +181,7 @@ class PredictionGameDRLAgent:
                 if evaluation_reward > highest_evaluation_reward:
                     highest_evaluation_reward = evaluation_reward
                     if self.auto_save:
-                        self.save_q_network(self.save_file)
+                        self.save_q_network(self.save_path)
                         log_str = "=== Saved Q-Network with Evaluation Reward: {} ===".format(
                             evaluation_reward)
                         if self.logging:
@@ -266,5 +266,5 @@ class PredictionGameDRLAgent:
         Args:
             line (str): The line to log to the log file.
         """
-        with open(self.log_file, "a") as f:
+        with open(self.log_path, "a") as f:
             f.write(line + "\n")

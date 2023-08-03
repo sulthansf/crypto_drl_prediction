@@ -23,10 +23,10 @@ def main():
 
     # Set the config file
     config_file_name = args.config
-    config_file = '../../config/' + config_file_name
+    config_path = '../../config/' + config_file_name
 
     # Read the json file
-    config = json.load(open(config_file))
+    config = json.load(open(config_path))
 
     # Set the inputs
     symbol = config['symbol']

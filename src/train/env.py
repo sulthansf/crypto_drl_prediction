@@ -13,7 +13,7 @@ class PredictionGameEnvironment:
     A prediction game environment for the RL agent.
     """
 
-    def __init__(self, dataset_df, features, ta_period, window_size, episode_length, eval_episode_length, prediction_period, scaler_path=None, verbose=1, logging=False, log_file=None):
+    def __init__(self, dataset_df, features, ta_period, window_size, episode_length, eval_episode_length, prediction_period, scaler_path=None, verbose=1, logging=False, log_path=None):
         """
         Initialize the environment.
 
@@ -28,7 +28,7 @@ class PredictionGameEnvironment:
             scaler_path (str): The path to the scaler file.
             verbose (int): The verbosity level (0, 1 or 2).
             logging (bool): Indicates whether to log the training process.
-            log_file (str): The path to the log file.
+            log_path (str): The path to the log file.
         """
         self.features = features
         price_idx = self.features.index('close')
@@ -45,10 +45,10 @@ class PredictionGameEnvironment:
         self.prev_episode_lengths = deque(maxlen=25)
         self.verbose = verbose
         self.logging = logging
-        if log_file:
-            self.log_file = log_file
+        if log_path:
+            self.log_path = log_path
         else:
-            self.log_file = '../../log/env_log_' + \
+            self.log_path = '../../log/env_log_' + \
                 time.strftime("%Y%m%d_%H%M%S") + '.txt'
         self.reset()
 
@@ -229,5 +229,5 @@ class PredictionGameEnvironment:
         Args:
             line (str): The line to log to the log file.
         """
-        with open(self.log_file, "a") as f:
+        with open(self.log_path, "a") as f:
             f.write(line + "\n")

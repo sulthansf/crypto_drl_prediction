@@ -8,7 +8,7 @@ from binance.client import Client
 
 
 class PredictionGameDRLPlayer:
-    def __init__(self, api_key, api_secret, symbol, interval, features, ta_period, window_size, prediction_period, action_space, q_network_path, scaler_path, verbose=1, logging=False, log_file=None):
+    def __init__(self, api_key, api_secret, symbol, interval, features, ta_period, window_size, prediction_period, action_space, q_network_path, scaler_path, verbose=1, logging=False, log_path=None):
         """
         Initialize the PredictionGameDRLPlayer.
 
@@ -26,7 +26,7 @@ class PredictionGameDRLPlayer:
             scaler_path (str): The path to the scaler.
             verbose (int): The verbosity level (0, 1 or 2).
             logging (bool): Indicates whether to log the training process.
-            log_file (str): The path to the log file.
+            log_path (str): The path to the log file.
         """
         self.api_key = api_key
         self.api_secret = api_secret
@@ -40,10 +40,10 @@ class PredictionGameDRLPlayer:
         self.action_space = action_space
         self.verbose = verbose
         self.logging = logging
-        if log_file:
-            self.log_file = log_file
+        if log_path:
+            self.log_path = log_path
         else:
-            self.log_file = '../../log/env_log_' + \
+            self.log_path = '../../log/env_log_' + \
                 time.strftime("%Y%m%d_%H%M%S") + '.txt'
 
         # Load the pre-trained Q-network
