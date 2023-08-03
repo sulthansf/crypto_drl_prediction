@@ -13,13 +13,14 @@ class PredictionGameEnvironment:
     A prediction game environment for the RL agent.
     """
 
-    def __init__(self, dataset_df, features, ta_period, window_size, episode_length, eval_episode_length, prediction_period, scaler_path=None, verbose=1, logging=False, log_path=None):
+    def __init__(self, dataset_df, features, sampling_period, ta_period, window_size, episode_length, eval_episode_length, prediction_period, scaler_path=None, verbose=1, logging=False, log_path=None):
         """
         Initialize the environment.
 
         Args:
             dataset_df (pd.DataFrame): The input dataset as a pandas DataFrame.
             features (list): The list of features to use for training.
+            sampling_period (int): The sampling period of the dataset.
             ta_period (int): The period used for calculating technical indicators.
             window_size (int): The size of the window for the state.
             episode_length (int): The length of an episode.
@@ -31,6 +32,7 @@ class PredictionGameEnvironment:
             log_path (str): The path to the log file.
         """
         self.features = features
+        self.sampling_period = sampling_period
         price_idx = self.features.index('close')
         self.scaler = joblib.load(scaler_path) if scaler_path else None
         self.dataset, self.price_data = self.process_data(
@@ -77,7 +79,7 @@ class PredictionGameEnvironment:
 
     def process_data(self, dataset_df, ta_period, price_idx):
         """
-        Process the dataset by calculating technical indicators and scaling the data.
+        Process the dataset by sampling, generating technical indicators and scaling.
 
         Args:
             dataset_df (pd.DataFrame): The input dataset as a pandas DataFrame.
@@ -87,6 +89,70 @@ class PredictionGameEnvironment:
         Returns:
             dataset (np.ndarray): The processed and scaled dataset as a NumPy array.
             price_data (np.ndarray): The price data extracted from the dataset.
+        """
+        sampled_dfs = []
+
+        # Loop through the range(sampling_period) to generate sampled datasets
+        for i in range(self.sampling_period):
+            # Sample the dataset
+            sampled_df = self.resample(
+                dataset_df[i::], str(self.sampling_period) + 'T')
+            # Generate TAs for the sampled dataset
+            sampled_df = self.generate_technical_indicators(
+                sampled_df)
+            # Append the sampled dataset to the list of sampled datasets
+            sampled_dfs.append(sampled_df)
+
+        # Concatenate the sampled datasets to create the final processed dataset
+        processed_dataset_df = pd.concat(sampled_dfs)
+
+        # Sort the final dataset to get the correct order
+        processed_dataset_df = processed_dataset_df.sort_index()
+
+        # Drop the first 5*ta_period*sample_period rows and the NaN values
+        num_drop = 5*ta_period*self.sampling_period
+        processed_dataset_df = processed_dataset_df.iloc[num_drop:]
+        processed_dataset_df = processed_dataset_df.dropna()
+
+        # Convert the dataset_df to a NumPy array and get the price data
+        dataset = processed_dataset_df[self.features].to_numpy().astype(
+            np.float32)
+        price_data = dataset[:, price_idx]
+
+        # Scale the dataset
+        if not self.scaler:
+            self.scaler = RobustScaler()
+            dataset_scaled = self.scaler.fit_transform(
+                dataset).astype(np.float32)
+        else:
+            dataset_scaled = self.scaler.transform(dataset).astype(np.float32)
+        return dataset_scaled, price_data
+
+    def resample(df: pd.DataFrame, interval: str) -> pd.DataFrame:
+        """
+        Resample the dataset.
+
+        Args:
+            df (pd.DataFrame): The input dataset as a pandas DataFrame.
+            interval (str): The sampling interval.
+
+        Returns:
+            df (pd.DataFrame): The resampled dataset as a pandas DataFrame.
+        """
+        d = {"open": "first", "high": "max", "low": "min",
+             "close": "last", "volume": "sum"}
+        return df.resample(interval, origin="start").agg(d)
+
+    def generate_technical_indicators(self, dataset_df, ta_period):
+        """
+        Generate technical indicators from the dataset.
+
+        Args:
+            dataset_df (pd.DataFrame): The input dataset as a pandas DataFrame.
+            ta_period (int): The period used for calculating technical indicators.
+
+        Returns:
+            dataset_df (pd.DataFrame): The dataset with the technical indicators.
         """
         dataset_df['sma'] = TA.SMA(dataset_df, ta_period)
         dataset_df['ema'] = TA.EMA(dataset_df, ta_period)
@@ -112,18 +178,7 @@ class PredictionGameEnvironment:
         dataset_df['tp'] = TA.TP(dataset_df)
         dataset_df['adl'] = TA.ADL(dataset_df)
         dataset_df[['basp_buy', 'basp_sell']] = TA.BASP(dataset_df, ta_period)
-        dataset_df = dataset_df.dropna()
-        num_drop = 5*ta_period
-        dataset_df = dataset_df.iloc[num_drop:]
-        dataset = dataset_df[self.features].to_numpy().astype(np.float32)
-        price_data = dataset[:, price_idx]
-        if not self.scaler:
-            self.scaler = RobustScaler()
-            dataset_scaled = self.scaler.fit_transform(
-                dataset).astype(np.float32)
-        else:
-            dataset_scaled = self.scaler.transform(dataset).astype(np.float32)
-        return dataset_scaled, price_data
+        return dataset_df
 
     def step(self, action):
         """
