@@ -7,7 +7,7 @@ from agent import PredictionGameDRLAgent
 def main():
 
     # Set the inputs
-    dataset_df = joblib.load('../../datasets/ETHUSDT_1000_days_5_min.bin')
+    dataset_df = joblib.load('../datasets/ETHUSDT_1000_days_5_min.bin')
     features = ['open', 'high', 'low', 'close', 'volume', 'bb_upper',
                 'bb_middle', 'bb_lower', 'macd', 'signal', 'rsi',  'stoch_k', 'stoch_d']
     ta_period = 12
@@ -17,10 +17,10 @@ def main():
     prediction_period = 1
     state_shape = (window_size, len(features))
     timestr = time.strftime("%Y%m%d_%H%M%S")
-    agent_log_path = '../../log/agent_log_' + timestr + '.txt'
-    env_log_path = '../../log/env_log_' + timestr + '.txt'
-    scaler_save_path = '../../scalers/scaler_' + timestr + '.bin'
-    q_network_save_path = '../../models/q_network_' + timestr + '.keras'
+    agent_log_path = '../log/agent_log_' + timestr + '.txt'
+    env_log_path = '../log/env_log_' + timestr + '.txt'
+    scaler_save_path = '../scalers/scaler_' + timestr + '.bin'
+    q_network_save_path = '../models/q_network_' + timestr + '.keras'
 
     # Create the environment
     env = PredictionGameEnvironment(dataset_df, features, ta_period, window_size, episode_length, eval_episode_length,

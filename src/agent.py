@@ -51,12 +51,12 @@ class PredictionGameDRLAgent:
         if log_path:
             self.log_path = log_path
         else:
-            self.log_path = '../../log/agent_log_' + \
+            self.log_path = '../log/agent_log_' + \
                 time.strftime("%Y%m%d_%H%M%S") + '.txt'
         if save_path:
             self.save_path = save_path
         else:
-            self.save_path = '../../models/q_network_' + \
+            self.save_path = '../models/q_network_' + \
                 time.strftime("%Y%m%d_%H%M%S") + '.keras'
 
         # Create the Q-network and target Q-network

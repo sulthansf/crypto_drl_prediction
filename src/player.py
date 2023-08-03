@@ -43,7 +43,7 @@ class PredictionGameDRLPlayer:
         if log_path:
             self.log_path = log_path
         else:
-            self.log_path = '../../log/env_log_' + \
+            self.log_path = '../log/env_log_' + \
                 time.strftime("%Y%m%d_%H%M%S") + '.txt'
 
         # Load the pre-trained Q-network
@@ -134,6 +134,21 @@ class PredictionGameDRLPlayer:
         dataset = dataset_df[self.features].to_numpy().astype(np.float32)
         dataset_scaled = self.scaler.transform(dataset).astype(np.float32)
         return dataset_scaled
+
+    def sample_data(self, dataset_df):
+        """
+        Sample the dataset to the desired sampling period.
+
+        Args:
+            dataset_df (pd.DataFrame): The input dataset as a pandas DataFrame.
+
+        Returns:
+            dataset_df (pd.DataFrame): The sampled dataset as a pandas DataFrame.
+        """
+        if self.sampling_period > 1:
+            dataset_df = dataset_df[::-1].iloc[::self.sampling_period][::-1]
+            dataset_df = dataset_df.reset_index(drop=True)
+        return dataset_df
 
     def choose_action(self, state):
         """

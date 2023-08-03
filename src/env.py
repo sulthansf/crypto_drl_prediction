@@ -50,7 +50,7 @@ class PredictionGameEnvironment:
         if log_path:
             self.log_path = log_path
         else:
-            self.log_path = '../../log/env_log_' + \
+            self.log_path = '../log/env_log_' + \
                 time.strftime("%Y%m%d_%H%M%S") + '.txt'
         self.reset()
 
