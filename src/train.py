@@ -6,12 +6,12 @@ from agent import PredictionGameDRLAgent
 
 def main():
     # Set the inputs
-    dataset_df = joblib.load('../datasets/ETHUSDT_1000_days_5_min.bin')
+    dataset_df = joblib.load('../datasets/BTCUSDT_3000_days_5_min.bin')
     features = ['open', 'high', 'low', 'close', 'volume', 'bb_upper',
                 'bb_middle', 'bb_lower', 'macd', 'signal', 'rsi',  'stoch_k', 'stoch_d']
     sampling_period = 1
-    ta_period = 12
-    window_size = 12
+    ta_period = 14
+    window_size = 36
     episode_length = 1000
     eval_episode_length = 10000
     prediction_period = 1
@@ -29,7 +29,7 @@ def main():
 
     # Create the agent
     agent = PredictionGameDRLAgent(state_shape, action_space, epsilon_initial=1.0, epsilon_decay=0.995, epsilon_min=0.01, gamma=0.99,
-                                   update_frequency=10, verbose=2, logging=True, log_path=agent_log_path, auto_save=True, save_path=q_network_save_path)
+                                   update_frequency=32, verbose=2, logging=True, log_path=agent_log_path, auto_save=True, save_path=q_network_save_path)
 
     # Save scaler
     joblib.dump(env.get_scaler(), scaler_save_path, compress=True)
