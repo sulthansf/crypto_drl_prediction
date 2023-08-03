@@ -218,7 +218,7 @@ class PredictionGameDRLAgent:
         self.q_network.fit(states, current_q, verbose=0,
                            callbacks=[ClearMemory()])
 
-    def evaluate(self, env):
+    def evaluate(self, env, random_state=True):
         """
         Evaluate the DRL agent on the environment for one episode.
 
@@ -234,11 +234,33 @@ class PredictionGameDRLAgent:
 
         while not done:
             action = self.choose_action(state, exploration=False)
-            next_state, reward, done = env.step(action)
+            next_state, reward, done = env.step(action, random_state)
             evaluation_reward += reward
             state = next_state
 
         return evaluation_reward
+
+    def test(self, env, episodes, random_state=False):
+        """
+        Test the DRL agent on the environment for multiple episodes.
+
+        Args:
+            env (PredictionGameEnvironment): The environment to test the agent on.
+            episodes (int): The number of episodes to test the agent.
+            random_state (bool): Whether to use random states or not.
+
+        Returns:
+            test_rewards (list): The total rewards obtained during the test episodes.
+        """
+        # Test the agent on the environment
+        for episode in range(episodes):
+            test_reward = self.evaluate(env, random_state)
+            log_str = "Test Episode: {}/{} | Episode Reward: {}".format(
+                episode+1, episodes, test_reward)
+            if self.logging:
+                self.log(log_str)
+            if self.verbose > 1:
+                print(log_str)
 
     def save_q_network(self, path):
         """

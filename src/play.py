@@ -7,9 +7,6 @@ from player import PredictionGamePlayer
 def main():
     """
     The main function.
-
-    Args:
-        args (argparse.Namespace): The arguments.
     """
     # Parse the arguments
     parser = argparse.ArgumentParser()
