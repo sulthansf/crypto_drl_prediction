@@ -13,20 +13,21 @@ def main():
     dataset_df = joblib.load('../datasets/BTCUSDT_3000_days_5_min.bin')
     features = ['open', 'high', 'low', 'close', 'volume', 'bb_upper',
                 'bb_middle', 'bb_lower', 'macd', 'signal', 'rsi',  'stoch_k', 'stoch_d']
-    sampling_period = 1
+    sampling_interval = 5
+    resampling_interval = 5
     ta_period = 14
     window_size = 36
     episode_length = 1000
     test_episode_length = 50000
-    prediction_period = 1
+    prediction_period = 6
     state_shape = (window_size, len(features))
     timestr = time.strftime("%Y%m%d_%H%M%S")
     agent_log_path = '../log/agent_log_' + timestr + '.txt'
     env_log_path = '../log/env_log_' + timestr + '.txt'
 
     # Create the environment
-    env = PredictionGameEnvironment(dataset_df, features, sampling_period, ta_period, window_size, episode_length,
-                                    test_episode_length, prediction_period, scaler_path=scaler_path, verbose=2, logging=True, log_path=env_log_path)
+    env = PredictionGameEnvironment(dataset_df, features, sampling_interval, resampling_interval, ta_period, window_size, prediction_period,
+                                    episode_length, test_episode_length, scaler_path=scaler_path, verbose=2, logging=True, log_path=env_log_path)
     action_space = env.get_action_space()
 
     # Create the agent

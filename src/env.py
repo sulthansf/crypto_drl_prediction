@@ -13,35 +13,37 @@ class PredictionGameEnvironment:
     A prediction game environment for the RL agent.
     """
 
-    def __init__(self, dataset_df, features, sampling_period, ta_period, window_size, episode_length, eval_episode_length, prediction_period, scaler_path=None, verbose=1, logging=False, log_path=None):
+    def __init__(self, dataset_df, features, sampling_interval, resampling_interval, ta_period, window_size, prediction_period, episode_length, eval_episode_length, scaler_path=None, verbose=1, logging=False, log_path=None):
         """
         Initialize the environment.
 
         Args:
             dataset_df (pd.DataFrame): The input dataset as a pandas DataFrame.
             features (list): The list of features to use for training.
-            sampling_period (int): The sampling period of the dataset.
+            sampling_interval (int): The interval used for sampling the dataset in minutes.
+            resampling_interval (int): The interval used for resampling the dataset in minutes.
             ta_period (int): The period used for calculating technical indicators.
             window_size (int): The size of the window for the state.
+            prediction_period (int): The period used for predicting the price.
             episode_length (int): The length of an episode.
             eval_episode_length (int): The length of the evaluation period.
-            prediction_period (int): The period used for predicting the price.
             scaler_path (str): The path to the scaler file.
             verbose (int): The verbosity level (0, 1 or 2).
             logging (bool): Indicates whether to log the training process.
             log_path (str): The path to the log file.
         """
         self.features = features
-        self.sampling_period = sampling_period
+        self.sampling_interval = sampling_interval
+        self.resampling_interval = resampling_interval
         price_idx = self.features.index('close')
         self.scaler = joblib.load(scaler_path) if scaler_path else None
         self.dataset, self.price_data = self.process_data(
             dataset_df, ta_period, price_idx)
         self.num_data = len(self.dataset)
         self.window_size = window_size
+        self.prediction_period = prediction_period
         self.episode_length = episode_length
         self.eval_episode_length = eval_episode_length
-        self.prediction_period = prediction_period
         self.action_space = [-1.0, 0.0, 1.0]
         self.reward_space = [-1.0, 0.0, 0.7]
         self.prev_episode_lengths = deque(maxlen=25)
@@ -52,6 +54,9 @@ class PredictionGameEnvironment:
         else:
             self.log_path = '../log/env_log_' + \
                 time.strftime("%Y%m%d_%H%M%S") + '.txt'
+        if self.resampling_interval % self.sampling_interval != 0:
+            raise ValueError(
+                'The sampling period must be a multiple of the interval!')
         self.reset()
 
     def reset(self, eval=False):
@@ -90,27 +95,33 @@ class PredictionGameEnvironment:
             dataset (np.ndarray): The processed and scaled dataset as a NumPy array.
             price_data (np.ndarray): The price data extracted from the dataset.
         """
-        sampled_dfs = []
+        if self.resampling_interval/self.sampling_interval > 1:
+            # Create a list to store the sampled datasets
+            sampled_dfs = []
 
-        # Loop through the range(sampling_period) to generate sampled datasets
-        for i in range(self.sampling_period):
-            # Sample the dataset
-            sampled_df = self.resample(
-                dataset_df[i::], str(self.sampling_period) + 'T')
-            # Generate TAs for the sampled dataset
-            sampled_df = self.generate_technical_indicators(
-                sampled_df)
-            # Append the sampled dataset to the list of sampled datasets
-            sampled_dfs.append(sampled_df)
+            # Loop through the range(resampling_interval/interval) to generate sampled datasets
+            for i in range(self.resampling_interval/self.sampling_interval):
+                # Sample the dataset
+                sampled_df = self.resample(
+                    dataset_df.iloc[i::], str(self.resampling_interval) + 'T')
+                # Generate TAs for the sampled dataset
+                sampled_df = self.generate_technical_indicators(
+                    sampled_df, ta_period)
+                # Append the sampled dataset to the list of sampled datasets
+                sampled_dfs.append(sampled_df)
 
-        # Concatenate the sampled datasets to create the final processed dataset
-        processed_dataset_df = pd.concat(sampled_dfs)
-
-        # Sort the final dataset to get the correct order
-        processed_dataset_df = processed_dataset_df.sort_index()
+            # Concatenate the sampled datasets to create the final processed dataset
+            processed_dataset_df = pd.concat(sampled_dfs)
+            # Sort the final dataset to get the correct order
+            processed_dataset_df = processed_dataset_df.sort_index()
+        else:
+            # Generate TAs for the original dataset
+            processed_dataset_df = dataset_df
+            processed_dataset_df = self.generate_technical_indicators(
+                processed_dataset_df, ta_period)
 
         # Drop the first 5*ta_period*sample_period rows and the NaN values
-        num_drop = 5*ta_period*self.sampling_period
+        num_drop = 5*ta_period*self.resampling_interval
         processed_dataset_df = processed_dataset_df.iloc[num_drop:]
         processed_dataset_df = processed_dataset_df.dropna()
 
@@ -260,7 +271,8 @@ class PredictionGameEnvironment:
             state_id = random.randrange(
                 self.window_size - 1, self.num_data - self.prediction_period)
         else:
-            state_id = (self.state_id + 1) % self.num_data
+            state_id = min(self.window_size - 1, (self.state_id + 1) %
+                           (self.num_data - self.prediction_period))
         start = state_id - self.window_size + 1
         end = state_id + 1
         state = self.dataset[start:end, :]
