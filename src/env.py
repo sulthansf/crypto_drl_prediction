@@ -180,12 +180,13 @@ class PredictionGameEnvironment:
         dataset_df[['basp_buy', 'basp_sell']] = TA.BASP(dataset_df, ta_period)
         return dataset_df
 
-    def step(self, action):
+    def step(self, action, random_state=True):
         """
         Perform one step in the environment.
 
         Args:
             action (float): The chosen action.
+            random_state (bool): Indicates whether to use a random state or not.
 
         Returns:
             state (np.ndarray): The current state.
@@ -196,7 +197,7 @@ class PredictionGameEnvironment:
             return self.state, self.reward, self.done
         self.reward = self.calculate_reward(action)
         self.balance += self.reward
-        self.state_id, self.state = self.update_state()
+        self.state_id, self.state = self.update_state(random_state)
         self.step_count += 1
         max_steps = self.episode_length if not self.eval_episode else self.eval_episode_length
         if (self.step_count >= max_steps) or (self.balance <= 0):
@@ -244,16 +245,22 @@ class PredictionGameEnvironment:
             self.action_results_count[2] += 1
         return reward
 
-    def update_state(self):
+    def update_state(self, random_state=True):
         """
         Update the current state by randomly selecting a state within the data range.
+
+        Args:
+            random_state (bool): Indicates whether to use a random state or not.
 
         Returns:
             state_id (int): The index of the selected state.
             state (np.ndarray): The state corresponding to the selected state_id.
         """
-        state_id = random.randrange(
-            self.window_size - 1, self.num_data - self.prediction_period)
+        if random_state:
+            state_id = random.randrange(
+                self.window_size - 1, self.num_data - self.prediction_period)
+        else:
+            state_id = (self.state_id + 1) % self.num_data
         start = state_id - self.window_size + 1
         end = state_id + 1
         state = self.dataset[start:end, :]
