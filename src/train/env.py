@@ -12,7 +12,7 @@ class PredictionGameEnvironment:
     A prediction game environment for the RL agent.
     """
 
-    def __init__(self, dataset_df, features, ta_period, window_size, episode_length, prediction_period, verbose=1, logging=False, log_file=None):
+    def __init__(self, dataset_df, features, ta_period, window_size, episode_length, eval_episode_length, prediction_period, verbose=1, logging=False, log_file=None):
         """
         Initialize the environment.
 
@@ -22,6 +22,7 @@ class PredictionGameEnvironment:
             ta_period (int): The period used for calculating technical indicators.
             window_size (int): The size of the window for the state.
             episode_length (int): The length of an episode.
+            eval_episode_length (int): The length of the evaluation period.
             prediction_period (int): The period used for predicting the price.
             verbose (int): The verbosity level (0, 1 or 2).
             logging (bool): Indicates whether to log the training process.
@@ -35,6 +36,7 @@ class PredictionGameEnvironment:
         self.num_data = len(self.dataset)
         self.window_size = window_size
         self.episode_length = episode_length
+        self.eval_episode_length = eval_episode_length
         self.prediction_period = prediction_period
         self.action_space = [-1.0, 0.0, 1.0]
         self.reward_space = [-1.0, 0.0, 0.7]
@@ -48,16 +50,20 @@ class PredictionGameEnvironment:
                 time.strftime("%Y%m%d_%H%M%S") + '.txt'
         self.reset()
 
-    def reset(self):
+    def reset(self, eval=False):
         """
         Reset the environment for a new episode and return the initial state.
+
+        Args:
+            eval (bool): Indicates whether the current episode is used for evaluation or not.
 
         Returns:
             state (np.ndarray): The initial state of the environment.
         """
+        self.eval_episode = eval
         self.done = False
         self.step_count = 0
-        self.balance = 10.0
+        self.balance = 10.0 if not self.eval_episode else 25.0
         self.reward = None
         self.action = None
         self.winning_action = None
@@ -130,11 +136,16 @@ class PredictionGameEnvironment:
         self.balance += self.reward
         self.state_id, self.state = self.update_state()
         self.step_count += 1
-        if (self.step_count >= self.episode_length) or (self.balance <= 0):
+        max_steps = self.episode_length if not self.eval_episode else self.eval_episode_length
+        if (self.step_count >= max_steps) or (self.balance <= 0):
             self.done = True
-            self.prev_episode_lengths.append(self.step_count)
-            log_str = "Episode length: {}/{}, Losing actions: {}, Neutral actions: {}, Winning actions: {}, Mean Episode Length (25): {}".format(
-                self.step_count, self.episode_length, self.action_results_count[0], self.action_results_count[1], self.action_results_count[2], np.mean(self.prev_episode_lengths))
+            if not self.eval_episode:
+                self.prev_episode_lengths.append(self.step_count)
+                log_str = "Episode length: {}/{}, Losing actions: {}, Neutral actions: {}, Winning actions: {}, Mean Episode Length (25): {}".format(
+                    self.step_count, max_steps, self.action_results_count[0], self.action_results_count[1], self.action_results_count[2], np.mean(self.prev_episode_lengths))
+            else:
+                log_str = "=== Evaluation Episode length: {}/{}, Losing actions: {}, Neutral actions: {}, Winning actions: {} ===".format(
+                    self.step_count, max_steps, self.action_results_count[0], self.action_results_count[1], self.action_results_count[2])
             if self.logging:
                 self.log(log_str)
             if self.verbose > 1:

@@ -13,6 +13,7 @@ def main():
     ta_period = 12
     window_size = 12
     episode_length = 1000
+    eval_episode_length = 10000
     prediction_period = 1
     state_shape = (window_size, len(features))
     timestr = time.strftime("%Y%m%d_%H%M%S")
@@ -22,8 +23,8 @@ def main():
     q_network_file = '../../models/q_network_' + timestr + '.keras'
 
     # Create the environment
-    env = PredictionGameEnvironment(dataset_df, features, ta_period, window_size,
-                                    episode_length, prediction_period, verbose=2, logging=True, log_file=env_log_file)
+    env = PredictionGameEnvironment(dataset_df, features, ta_period, window_size, episode_length,
+                                    eval_episode_length, prediction_period, verbose=2, logging=True, log_file=env_log_file)
     action_space = env.get_action_space()
 
     # Create the agent

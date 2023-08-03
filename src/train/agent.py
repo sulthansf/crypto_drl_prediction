@@ -162,7 +162,7 @@ class PredictionGameDRLAgent:
             self.epsilon = max(
                 self.epsilon_min, self.epsilon * self.epsilon_decay)
 
-            log_str = "Episode: {}/{} | Total Reward: {}".format(
+            log_str = "Episode: {}/{} | Episode Reward: {}".format(
                 episode+1, episodes, total_reward)
             if self.logging:
                 self.log(log_str)
@@ -170,7 +170,7 @@ class PredictionGameDRLAgent:
                 print(log_str)
 
             # Evaluate the agent every eval_frequency episodes
-            if episode % eval_frequency == 0:
+            if (episode + 1) % eval_frequency == 0:
                 evaluation_reward = self.evaluate(env)
                 log_str = "=== Evaluation Reward: {} ===".format(
                     evaluation_reward)
@@ -228,7 +228,7 @@ class PredictionGameDRLAgent:
         Returns:
             evaluation_reward (float): The total reward obtained during the evaluation episode.
         """
-        state = env.reset()
+        state = env.reset(eval=True)
         done = False
         evaluation_reward = 0
 
