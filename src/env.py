@@ -128,7 +128,7 @@ class PredictionGameEnvironment:
             dataset_scaled = self.scaler.transform(dataset).astype(np.float32)
         return dataset_scaled, price_data
 
-    def resample(df: pd.DataFrame, interval: str) -> pd.DataFrame:
+    def resample(self, df: pd.DataFrame, interval: str) -> pd.DataFrame:
         """
         Resample the dataset.
 
