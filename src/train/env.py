@@ -1,5 +1,6 @@
 import random
 import time
+import joblib
 import pandas as pd
 import numpy as np
 from sklearn.preprocessing import RobustScaler
@@ -12,7 +13,7 @@ class PredictionGameEnvironment:
     A prediction game environment for the RL agent.
     """
 
-    def __init__(self, dataset_df, features, ta_period, window_size, episode_length, eval_episode_length, prediction_period, verbose=1, logging=False, log_file=None):
+    def __init__(self, dataset_df, features, ta_period, window_size, episode_length, eval_episode_length, prediction_period, scaler_path=None, verbose=1, logging=False, log_file=None):
         """
         Initialize the environment.
 
@@ -24,13 +25,14 @@ class PredictionGameEnvironment:
             episode_length (int): The length of an episode.
             eval_episode_length (int): The length of the evaluation period.
             prediction_period (int): The period used for predicting the price.
+            scaler_path (str): The path to the scaler file.
             verbose (int): The verbosity level (0, 1 or 2).
             logging (bool): Indicates whether to log the training process.
             log_file (str): The path to the log file.
         """
         self.features = features
         price_idx = self.features.index('close')
-        self.scaler = RobustScaler()
+        self.scaler = joblib.load(scaler_path) if scaler_path else None
         self.dataset, self.price_data = self.process_data(
             dataset_df, ta_period, price_idx)
         self.num_data = len(self.dataset)
@@ -115,7 +117,12 @@ class PredictionGameEnvironment:
         dataset_df = dataset_df.iloc[num_drop:]
         dataset = dataset_df[self.features].to_numpy().astype(np.float32)
         price_data = dataset[:, price_idx]
-        dataset_scaled = self.scaler.fit_transform(dataset).astype(np.float32)
+        if not self.scaler:
+            self.scaler = RobustScaler()
+            dataset_scaled = self.scaler.fit_transform(
+                dataset).astype(np.float32)
+        else:
+            dataset_scaled = self.scaler.transform(dataset).astype(np.float32)
         return dataset_scaled, price_data
 
     def step(self, action):

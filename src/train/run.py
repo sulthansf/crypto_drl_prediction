@@ -23,8 +23,8 @@ def main():
     q_network_file = '../../models/q_network_' + timestr + '.keras'
 
     # Create the environment
-    env = PredictionGameEnvironment(dataset_df, features, ta_period, window_size, episode_length,
-                                    eval_episode_length, prediction_period, verbose=2, logging=True, log_file=env_log_file)
+    env = PredictionGameEnvironment(dataset_df, features, ta_period, window_size, episode_length, eval_episode_length,
+                                    prediction_period, scaler_path=None, verbose=2, logging=True, log_file=env_log_file)
     action_space = env.get_action_space()
 
     # Create the agent
