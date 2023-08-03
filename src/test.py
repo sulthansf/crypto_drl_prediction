@@ -8,8 +8,8 @@ def main():
     # Set the inputs
     scaler_name = 'scaler_20230730_131839'
     q_network_name = 'q_network_20230730_131839_reward_52_0'
-    scaler_path = '../scalers/scaler_' + scaler_name + '.bin'
-    q_network_path = '../models/q_network_' + q_network_name + '.keras'
+    scaler_path = '../scalers/' + scaler_name + '.bin'
+    q_network_path = '../models/' + q_network_name + '.keras'
     dataset_df = joblib.load('../datasets/BTCUSDT_3000_days_5_min.bin')
     features = ['open', 'high', 'low', 'close', 'volume', 'bb_upper',
                 'bb_middle', 'bb_lower', 'macd', 'signal', 'rsi',  'stoch_k', 'stoch_d']
