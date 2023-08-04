@@ -271,7 +271,7 @@ class PredictionGameEnvironment:
             state_id = random.randrange(
                 self.window_size - 1, self.num_data - self.prediction_period)
         else:
-            state_id = min(self.window_size - 1, (self.state_id + 1) %
+            state_id = max(self.window_size - 1, (self.state_id + 1) %
                            (self.num_data - self.prediction_period))
         start = state_id - self.window_size + 1
         end = state_id + 1
