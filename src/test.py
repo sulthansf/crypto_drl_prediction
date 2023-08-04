@@ -18,7 +18,7 @@ def main():
     ta_period = 14
     window_size = 36
     episode_length = 1000
-    test_episode_length = 50000
+    test_episode_length = 10000
     prediction_period = 6
     state_shape = (window_size, len(features))
     timestr = time.strftime("%Y%m%d_%H%M%S")

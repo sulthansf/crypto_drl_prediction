@@ -123,7 +123,8 @@ class PredictionGameDRLAgent:
         if exploration and np.random.rand() <= self.epsilon:
             return self.action_space[random.choice(range(self.num_actions))]
         else:
-            return self.action_space[np.argmax(self.q_network.predict(np.array([state]), verbose=0, callbacks=[ClearMemory()]))]
+            return self.action_space[random.choice(range(self.num_actions))]
+            # return self.action_space[np.argmax(self.q_network.predict(np.array([state]), verbose=0, callbacks=[ClearMemory()]))]
 
     def train(self, env, episodes, batch_size, eval_frequency=10):
         """
