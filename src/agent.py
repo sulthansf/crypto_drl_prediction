@@ -18,7 +18,7 @@ class ClearMemory(tf.keras.callbacks.Callback):
 
 
 class PredictionGameDRLAgent:
-    def __init__(self, state_shape, action_space, epsilon_initial=1.0, epsilon_decay=0.995, epsilon_min=0.01, gamma=0.99, update_frequency=10, verbose=1, logging=False, log_file=None, auto_save=True, save_file=None):
+    def __init__(self, state_shape, action_space, epsilon_initial=1.0, epsilon_decay=0.995, epsilon_min=0.01, gamma=0.99, update_frequency=10, verbose=1, logging=False, log_path=None, auto_save=True, save_path=None):
         """
         Initialize the DRL agent.
 
@@ -32,9 +32,9 @@ class PredictionGameDRLAgent:
             update_frequency (int): The number of steps between each Q-network update.
             verbose (int): The verbosity level.
             logging (bool): Whether to log the training process or not.
-            log_file (str): The path to the log file.
+            log_path (str): The path to the log file.
             auto_save (bool): Whether to automatically save the Q-network or not.
-            save_file (str): The path to save the Q-network to.
+            save_path (str): The path to save the Q-network to.
         """
         # Set the inputs
         self.state_shape = state_shape
@@ -48,15 +48,15 @@ class PredictionGameDRLAgent:
         self.verbose = verbose
         self.logging = logging
         self.auto_save = auto_save
-        if log_file:
-            self.log_file = log_file
+        if log_path:
+            self.log_path = log_path
         else:
-            self.log_file = 'log/agent_log_' + \
+            self.log_path = '../log/agent_log_' + \
                 time.strftime("%Y%m%d_%H%M%S") + '.txt'
-        if save_file:
-            self.save_file = save_file
+        if save_path:
+            self.save_path = save_path
         else:
-            self.save_file = 'models/q_network_' + \
+            self.save_path = '../models/q_network_' + \
                 time.strftime("%Y%m%d_%H%M%S") + '.keras'
 
         # Create the Q-network and target Q-network
@@ -162,7 +162,7 @@ class PredictionGameDRLAgent:
             self.epsilon = max(
                 self.epsilon_min, self.epsilon * self.epsilon_decay)
 
-            log_str = "Episode: {}/{} | Total Reward: {}".format(
+            log_str = "Episode: {}/{} | Episode Reward: {}".format(
                 episode+1, episodes, total_reward)
             if self.logging:
                 self.log(log_str)
@@ -170,7 +170,7 @@ class PredictionGameDRLAgent:
                 print(log_str)
 
             # Evaluate the agent every eval_frequency episodes
-            if episode % eval_frequency == 0:
+            if (episode + 1) % eval_frequency == 0:
                 evaluation_reward = self.evaluate(env)
                 log_str = "=== Evaluation Reward: {} ===".format(
                     evaluation_reward)
@@ -181,7 +181,7 @@ class PredictionGameDRLAgent:
                 if evaluation_reward > highest_evaluation_reward:
                     highest_evaluation_reward = evaluation_reward
                     if self.auto_save:
-                        self.save_q_network(self.save_file)
+                        self.save_q_network(self.save_path)
                         log_str = "=== Saved Q-Network with Evaluation Reward: {} ===".format(
                             evaluation_reward)
                         if self.logging:
@@ -218,7 +218,7 @@ class PredictionGameDRLAgent:
         self.q_network.fit(states, current_q, verbose=0,
                            callbacks=[ClearMemory()])
 
-    def evaluate(self, env):
+    def evaluate(self, env, random_state=True):
         """
         Evaluate the DRL agent on the environment for one episode.
 
@@ -228,17 +228,39 @@ class PredictionGameDRLAgent:
         Returns:
             evaluation_reward (float): The total reward obtained during the evaluation episode.
         """
-        state = env.reset()
+        state = env.reset(eval=True)
         done = False
         evaluation_reward = 0
 
         while not done:
             action = self.choose_action(state, exploration=False)
-            next_state, reward, done = env.step(action)
+            next_state, reward, done = env.step(action, random_state)
             evaluation_reward += reward
             state = next_state
 
         return evaluation_reward
+
+    def test(self, env, episodes, random_state=False):
+        """
+        Test the DRL agent on the environment for multiple episodes.
+
+        Args:
+            env (PredictionGameEnvironment): The environment to test the agent on.
+            episodes (int): The number of episodes to test the agent.
+            random_state (bool): Whether to use random states or not.
+
+        Returns:
+            test_rewards (list): The total rewards obtained during the test episodes.
+        """
+        # Test the agent on the environment
+        for episode in range(episodes):
+            test_reward = self.evaluate(env, random_state)
+            log_str = "Test Episode: {}/{} | Episode Reward: {}".format(
+                episode+1, episodes, test_reward)
+            if self.logging:
+                self.log(log_str)
+            if self.verbose > 1:
+                print(log_str)
 
     def save_q_network(self, path):
         """
@@ -256,8 +278,9 @@ class PredictionGameDRLAgent:
         Args:
             path (str): The path to load the agent from.
         """
-        self.q_network = tf.keras.models.load_model(path)
-        self.target_q_network = tf.keras.models.load_model(path)
+        q_network = tf.keras.models.load_model(path)
+        self.q_network.set_weights(q_network.get_weights())
+        self.target_q_network.set_weights(q_network.get_weights())
 
     def log(self, line):
         """
@@ -266,5 +289,5 @@ class PredictionGameDRLAgent:
         Args:
             line (str): The line to log to the log file.
         """
-        with open(self.log_file, "a") as f:
+        with open(self.log_path, "a") as f:
             f.write(line + "\n")
