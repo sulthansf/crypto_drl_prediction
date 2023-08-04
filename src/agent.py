@@ -283,9 +283,8 @@ class PredictionGameDRLAgent:
         Args:
             path (str): The path to load the agent from.
         """
-        q_network = tf.keras.models.load_model(path)
-        self.q_network.set_weights(q_network.get_weights())
-        self.target_q_network.set_weights(q_network.get_weights())
+        self.q_network = tf.keras.models.load_model(path)
+        self.target_q_network = tf.keras.models.load_model(path)
 
     def log(self, line):
         """
