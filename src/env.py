@@ -14,7 +14,7 @@ class PredictionGameEnvironment:
     A prediction game environment for the RL agent.
     """
 
-    def __init__(self, dataset_df, features, sampling_interval, resampling_interval, ta_period, window_size, prediction_period, episode_length, eval_episode_length, scaler_path=None, verbose=1, logging=False, log_path=None):
+    def __init__(self, dataset_df, features, sampling_interval, resampling_interval, prediction_interval, ta_period, window_size, episode_length, eval_episode_length, scaler_path=None, verbose=1, logging=False, log_path=None):
         """
         Initialize the environment.
 
@@ -23,9 +23,9 @@ class PredictionGameEnvironment:
             features (list): The list of features to use for training.
             sampling_interval (int): The interval used for sampling the dataset in minutes.
             resampling_interval (int): The interval used for resampling the dataset in minutes.
+            prediction_interval (int): The interval used for predicting the price in minutes.
             ta_period (int): The period used for calculating technical indicators.
             window_size (int): The size of the window for the state.
-            prediction_period (int): The period used for predicting the price.
             episode_length (int): The length of an episode.
             eval_episode_length (int): The length of the evaluation period.
             scaler_path (str): The path to the scaler file.
@@ -36,13 +36,17 @@ class PredictionGameEnvironment:
         self.features = features
         self.sampling_interval = sampling_interval
         self.resampling_interval = resampling_interval
+        self.resampling_factor = int(
+            self.resampling_interval / self.sampling_interval)
         price_idx = self.features.index('close')
         self.scaler = joblib.load(scaler_path) if scaler_path else None
         self.dataset, self.price_data = self.process_data(
             dataset_df, ta_period, price_idx)
         self.num_data = len(self.dataset)
+        self.prediction_interval = prediction_interval
+        self.prediction_interval_steps = int(
+            self.prediction_interval / self.sampling_interval)
         self.window_size = window_size
-        self.prediction_period = prediction_period
         self.episode_length = episode_length
         self.eval_episode_length = eval_episode_length
         self.action_space = [-1.0, 0.0, 1.0]
@@ -100,12 +104,12 @@ class PredictionGameEnvironment:
             dataset (np.ndarray): The processed and scaled dataset as a NumPy array.
             price_data (np.ndarray): The price data extracted from the dataset.
         """
-        if self.resampling_interval/self.sampling_interval > 1:
+        if self.resampling_factor > 1:
             # Create a list to store the sampled datasets
             sampled_dfs = []
 
             # Loop through the range(resampling_interval/interval) to generate sampled datasets
-            for i in range(self.resampling_interval/self.sampling_interval):
+            for i in range(self.resampling_factor):
                 # Sample the dataset
                 sampled_df = self.resample(
                     dataset_df.iloc[i::], str(self.resampling_interval) + 'T')
@@ -125,9 +129,10 @@ class PredictionGameEnvironment:
             processed_dataset_df = self.generate_technical_indicators(
                 processed_dataset_df, ta_period)
 
-        # Drop the first 5*ta_period*sample_period rows and the NaN values
-        num_drop = 5*ta_period*self.resampling_interval
+        # Drop the first 5*ta_period*resampling_factor rows to remove NaN values
+        num_drop = 5*ta_period*self.resampling_factor
         processed_dataset_df = processed_dataset_df.iloc[num_drop:]
+        # Drop any additional NaN values
         processed_dataset_df = processed_dataset_df.dropna()
 
         # Convert the dataset_df to a NumPy array and get the price data
@@ -245,7 +250,7 @@ class PredictionGameEnvironment:
             raise ValueError('Invalid action!')
         else:
             self.action = action
-        prediction_id = self.state_id + self.prediction_period
+        prediction_id = self.state_id + self.prediction_interval_steps
         self.current_price = self.price_data[self.state_id]
         self.prediction_price = self.price_data[prediction_id]
         self.winning_action = np.sign(
@@ -274,13 +279,13 @@ class PredictionGameEnvironment:
         """
         if random_state:
             state_id = random.randrange(
-                self.window_size - 1, self.num_data - self.prediction_period)
+                self.resampling_factor * (self.window_size - 1), self.num_data - self.prediction_interval_steps)
         else:
-            state_id = max(self.window_size - 1, (self.state_id + 1) %
-                           (self.num_data - self.prediction_period))
-        start = state_id - self.window_size + 1
+            state_id = max(self.resampling_factor * (self.window_size - 1), (self.state_id + self.resampling_factor) %
+                           (self.num_data - self.prediction_interval_steps))
+        start = state_id - self.resampling_factor * (self.window_size - 1)
         end = state_id + 1
-        state = self.dataset[start:end, :]
+        state = self.dataset[start:end:self.resampling_factor, :]
         return state_id, state
 
     def get_action_space(self):

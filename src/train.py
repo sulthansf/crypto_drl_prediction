@@ -11,11 +11,11 @@ def main():
                 'bb_middle', 'bb_lower', 'macd', 'signal', 'rsi',  'stoch_k', 'stoch_d']
     sampling_interval = 5
     resampling_interval = 5
+    prediction_interval = 30
     ta_period = 14
     window_size = 36
     episode_length = 1000
     eval_episode_length = 10000
-    prediction_period = 6
     state_shape = (window_size, len(features))
     timestr = time.strftime("%Y%m%d_%H%M%S")
     agent_log_path = '../log/agent_log_' + timestr + '.txt'
@@ -24,8 +24,8 @@ def main():
     q_network_save_path = '../models/q_network_' + timestr + '.keras'
 
     # Create the environment
-    env = PredictionGameEnvironment(dataset_df, features, sampling_interval, resampling_interval, ta_period, window_size,
-                                    prediction_period, episode_length, eval_episode_length, scaler_path=None, verbose=2, logging=True, log_path=env_log_path)
+    env = PredictionGameEnvironment(dataset_df, features, sampling_interval, resampling_interval, prediction_interval, ta_period, window_size,
+                                    episode_length, eval_episode_length, scaler_path=None, verbose=2, logging=True, log_path=env_log_path)
     action_space = env.get_action_space()
 
     # Create the agent
