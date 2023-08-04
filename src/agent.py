@@ -14,7 +14,6 @@ class ClearMemory(tf.keras.callbacks.Callback):
 
     def on_epoch_end(self, epoch, logs=None):
         gc.collect()
-        tf.keras.backend.clear_session()
 
 
 class PredictionGameDRLAgent:
@@ -203,10 +202,8 @@ class PredictionGameDRLAgent:
         states = np.array(states)
         next_states = np.array(next_states)
 
-        current_q = self.q_network.predict(
-            states, verbose=0, callbacks=[ClearMemory()])
-        next_q = self.target_q_network.predict(
-            next_states, verbose=0, callbacks=[ClearMemory()])
+        current_q = self.q_network(states, training=False).numpy()
+        next_q = self.target_q_network(next_states, training=False).numpy()
 
         for i in range(batch_size):
             target = rewards[i]
