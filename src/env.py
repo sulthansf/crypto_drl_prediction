@@ -1,3 +1,4 @@
+import gc
 import random
 import time
 import joblib
@@ -69,6 +70,7 @@ class PredictionGameEnvironment:
         Returns:
             state (np.ndarray): The initial state of the environment.
         """
+        # Reset the environment
         self.eval_episode = eval
         self.done = False
         self.step_count = 0
@@ -80,6 +82,9 @@ class PredictionGameEnvironment:
         self.prediction_price = None
         self.action_results_count = [0.0, 0.0, 0.0]
         self.state_id, self.state = self.update_state()
+        # Collect the garbage
+        gc.collect()
+        # Return the initial state
         return self.state
 
     def process_data(self, dataset_df, ta_period, price_idx):

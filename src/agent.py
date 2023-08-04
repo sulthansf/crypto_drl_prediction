@@ -140,9 +140,13 @@ class PredictionGameDRLAgent:
 
         # Train the agent on the environment
         for episode in range(episodes):
+            # Reset the environment
             state = env.reset()
             done = False
             total_reward = 0
+
+            # Collect the garbage
+            gc.collect()
 
             while not done:
                 action = self.choose_action(state)
@@ -225,9 +229,13 @@ class PredictionGameDRLAgent:
         Returns:
             evaluation_reward (float): The total reward obtained during the evaluation episode.
         """
+        # Reset the environment
         state = env.reset(eval=True)
         done = False
         evaluation_reward = 0
+
+        # Collect the garbage
+        gc.collect()
 
         while not done:
             action = self.choose_action(state, exploration=False)
