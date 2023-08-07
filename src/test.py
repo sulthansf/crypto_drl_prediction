@@ -47,7 +47,7 @@ def main():
 
     # Test the agent on the environment
     episodes = 100
-    agent.test(env, episodes, random_state=True)
+    agent.test(env, episodes, random_state=False)
 
 
 if __name__ == '__main__':

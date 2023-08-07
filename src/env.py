@@ -89,7 +89,7 @@ class PredictionGameEnvironment:
         self.current_price = None
         self.prediction_price = None
         self.action_results_count = [0.0, 0.0, 0.0]
-        self.state_id, self.state = self.update_state()
+        self.state_id, self.state = self.update_state(random_state=True)
         # Collect the garbage
         gc.collect()
         # Return the initial state
@@ -207,7 +207,7 @@ class PredictionGameEnvironment:
         # dataset_df[['basp_buy', 'basp_sell']] = TA.BASP(dataset_df, ta_period)
         return dataset_df
 
-    def step(self, action, random_state=True):
+    def step(self, action, random_state=False):
         """
         Perform one step in the environment.
 
@@ -227,7 +227,8 @@ class PredictionGameEnvironment:
         self.state_id, self.state = self.update_state(random_state)
         self.step_count += 1
         max_steps = self.episode_length if not self.eval_episode else self.eval_episode_length
-        if (self.step_count >= max_steps) or (self.balance <= 0):
+        max_state_id = self.num_data - self.prediction_interval_steps
+        if (self.step_count >= max_steps) or (self.state_id >= max_state_id) or (self.balance <= 0.0):
             self.done = True
             if not self.eval_episode:
                 self.prev_episode_lengths.append(self.step_count)
@@ -272,7 +273,7 @@ class PredictionGameEnvironment:
             self.action_results_count[2] += 1
         return reward
 
-    def update_state(self, random_state=True):
+    def update_state(self, random_state=False):
         """
         Update the current state by randomly selecting a state within the data range.
 
@@ -287,8 +288,7 @@ class PredictionGameEnvironment:
             state_id = random.randrange(
                 self.resampling_factor * (self.window_size - 1), self.num_data - self.prediction_interval_steps)
         else:
-            state_id = max(self.resampling_factor * (self.window_size - 1), (self.state_id + self.resampling_factor) %
-                           (self.num_data - self.prediction_interval_steps))
+            state_id = self.state_id + self.resampling_factor
         start = state_id - self.resampling_factor * (self.window_size - 1)
         end = state_id + 1
         state = self.dataset[start:end:self.resampling_factor, :]

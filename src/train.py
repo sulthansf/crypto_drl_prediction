@@ -47,7 +47,8 @@ def main():
     # Train the agent on the environment
     episodes = 1000
     batch_size = 64
-    agent.train(env, episodes, batch_size)
+    agent.train(env, episodes, batch_size,
+                eval_frequency=10, random_state=False)
 
 
 if __name__ == '__main__':

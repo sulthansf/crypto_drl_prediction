@@ -128,7 +128,7 @@ class PredictionGameDRLAgent:
         else:
             return self.action_space[np.argmax(self.q_network(np.array([state]), training=False).numpy()[0])]
 
-    def train(self, env, episodes, batch_size, eval_frequency=10):
+    def train(self, env, episodes, batch_size, eval_frequency=10, random_state=False):
         """
         Train the DRL agent on the environment.
 
@@ -154,7 +154,7 @@ class PredictionGameDRLAgent:
 
             while not done:
                 action = self.choose_action(state)
-                next_state, reward, done = env.step(action)
+                next_state, reward, done = env.step(action, random_state)
                 total_reward += reward
 
                 replay_buffer.append((state, action, reward, next_state, done))
@@ -223,7 +223,7 @@ class PredictionGameDRLAgent:
         self.q_network.fit(states, current_q, verbose=0,
                            callbacks=[ClearMemory()])
 
-    def evaluate(self, env, random_state=True):
+    def evaluate(self, env, random_state=False):
         """
         Evaluate the DRL agent on the environment for one episode.
 
