@@ -179,30 +179,32 @@ class PredictionGameEnvironment:
         Returns:
             dataset_df (pd.DataFrame): The dataset with the technical indicators.
         """
-        dataset_df['sma'] = TA.SMA(dataset_df, ta_period)
-        dataset_df['ema'] = TA.EMA(dataset_df, ta_period)
-        dataset_df['dema'] = TA.DEMA(dataset_df, ta_period)
-        dataset_df['mom'] = TA.MOM(dataset_df, ta_period)
-        dataset_df['vzo'] = TA.VZO(dataset_df, ta_period)
-        dataset_df[['macd', 'signal']] = TA.MACD(dataset_df)
-        dataset_df['rsi'] = TA.RSI(dataset_df, ta_period)
+        # Generate technical indicators
         dataset_df[['bb_upper', 'bb_middle', 'bb_lower']
                    ] = TA.BBANDS(dataset_df, ta_period)
+        dataset_df[['macd', 'signal']] = TA.MACD(dataset_df)
+        dataset_df['rsi'] = TA.RSI(dataset_df, ta_period)
         dataset_df['stoch_k'] = TA.STOCH(dataset_df, ta_period)
         dataset_df['stoch_d'] = TA.STOCHD(dataset_df, ta_period)
-        dataset_df['er'] = TA.ER(dataset_df, ta_period)
-        dataset_df[['ppo', 'ppo_sig', 'ppo_hist']
-                   ] = TA.PPO(dataset_df, ta_period)
-        dataset_df['roc'] = TA.ROC(dataset_df, ta_period)
-        dataset_df['atr'] = TA.ATR(dataset_df, ta_period)
-        dataset_df['sar'] = TA.SAR(dataset_df, ta_period)
-        dataset_df[['mobo_upper', 'mobo_middle', 'mobo_lower']
-                   ] = TA.MOBO(dataset_df, ta_period)
-        dataset_df[['dip', 'din']] = TA.DMI(dataset_df, ta_period)
-        dataset_df[['tsi', 'tsi_signal']] = TA.TSI(dataset_df, ta_period)
-        dataset_df['tp'] = TA.TP(dataset_df)
-        dataset_df['adl'] = TA.ADL(dataset_df)
-        dataset_df[['basp_buy', 'basp_sell']] = TA.BASP(dataset_df, ta_period)
+        # Uncomment the following lines to add more technical indicators
+        # dataset_df['sma'] = TA.SMA(dataset_df, ta_period)
+        # dataset_df['ema'] = TA.EMA(dataset_df, ta_period)
+        # dataset_df['dema'] = TA.DEMA(dataset_df, ta_period)
+        # dataset_df['mom'] = TA.MOM(dataset_df, ta_period)
+        # dataset_df['vzo'] = TA.VZO(dataset_df, ta_period)
+        # dataset_df['er'] = TA.ER(dataset_df, ta_period)
+        # dataset_df[['ppo', 'ppo_sig', 'ppo_hist']
+        #            ] = TA.PPO(dataset_df, ta_period)
+        # dataset_df['roc'] = TA.ROC(dataset_df, ta_period)
+        # dataset_df['atr'] = TA.ATR(dataset_df, ta_period)
+        # dataset_df['sar'] = TA.SAR(dataset_df, ta_period)
+        # dataset_df[['mobo_upper', 'mobo_middle', 'mobo_lower']
+        #            ] = TA.MOBO(dataset_df, ta_period)
+        # dataset_df[['dip', 'din']] = TA.DMI(dataset_df, ta_period)
+        # dataset_df[['tsi', 'tsi_signal']] = TA.TSI(dataset_df, ta_period)
+        # dataset_df['tp'] = TA.TP(dataset_df)
+        # dataset_df['adl'] = TA.ADL(dataset_df)
+        # dataset_df[['basp_buy', 'basp_sell']] = TA.BASP(dataset_df, ta_period)
         return dataset_df
 
     def step(self, action, random_state=True):
