@@ -1,4 +1,5 @@
 import gc
+import os
 import random
 import time
 import joblib
@@ -54,11 +55,14 @@ class PredictionGameEnvironment:
         self.prev_episode_lengths = deque(maxlen=25)
         self.verbose = verbose
         self.logging = logging
+        self.project_path = os.path.dirname(
+            os.path.dirname(os.path.abspath(__file__)))
+        timestr = time.strftime("%Y%m%d_%H%M%S")
         if log_path:
             self.log_path = log_path
         else:
-            self.log_path = '../log/env_log_' + \
-                time.strftime("%Y%m%d_%H%M%S") + '.txt'
+            self.log_path = os.path.join(
+                self.project_path, 'log', 'env_log_' + timestr + '.txt')
         if self.resampling_interval % self.sampling_interval != 0:
             raise ValueError(
                 'The sampling period must be a multiple of the interval!')

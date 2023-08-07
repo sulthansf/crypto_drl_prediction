@@ -1,4 +1,5 @@
 import gc
+import os
 import random
 import time
 import numpy as np
@@ -47,16 +48,19 @@ class PredictionGameDRLAgent:
         self.verbose = verbose
         self.logging = logging
         self.auto_save = auto_save
+        self.project_path = os.path.dirname(
+            os.path.dirname(os.path.abspath(__file__)))
+        timestr = time.strftime("%Y%m%d_%H%M%S")
         if log_path:
             self.log_path = log_path
         else:
-            self.log_path = '../log/agent_log_' + \
-                time.strftime("%Y%m%d_%H%M%S") + '.txt'
+            self.log_path = os.path.join(
+                self.project_path, 'log', 'agent_log_' + timestr + '.txt')
         if save_path:
             self.save_path = save_path
         else:
-            self.save_path = '../models/q_network_' + \
-                time.strftime("%Y%m%d_%H%M%S") + '.keras'
+            self.save_path = os.path.join(
+                self.project_path, 'models', 'q_network_' + timestr + '.keras')
 
         # Create the Q-network and target Q-network
         self.q_network = self.create_q_network()

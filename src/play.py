@@ -1,3 +1,4 @@
+import os
 import time
 import argparse
 import json
@@ -18,9 +19,12 @@ def main():
     api_key = 'YOUR_API_KEY'
     api_secret = 'YOUR_API_SECRET'
 
+    # Get the project path
+    project_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
     # Set the config file
     config_file_name = args.config
-    config_path = '../config/' + config_file_name
+    config_path = os.path.join(project_path, 'configs', config_file_name)
 
     # Read the json file
     config = json.load(open(config_path))
@@ -37,8 +41,8 @@ def main():
     # Model and scaler paths
     model_name = config['model_name']
     scaler_name = config['scaler_name']
-    model_path = '../models/' + model_name
-    scaler_path = '../scalers/' + scaler_name
+    model_path = os.path.join(project_path, 'models', model_name)
+    scaler_path = os.path.join(project_path, 'scalers', scaler_name)
 
     # Create the player
     player = PredictionGamePlayer(api_key, api_secret, symbol, interval, features, ta_period, window_size,
