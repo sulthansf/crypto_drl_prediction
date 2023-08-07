@@ -138,7 +138,7 @@ class PredictionGameDRLAgent:
             batch_size (int): The batch size for training the agent.
             eval_frequency (int): The number of episodes between each evaluation.
         """
-        replay_buffer = deque(maxlen=100000)
+        replay_buffer = deque(maxlen=250000)
         steps_since_update = 0
         highest_evaluation_reward = 0
 

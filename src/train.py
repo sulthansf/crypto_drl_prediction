@@ -8,13 +8,13 @@ from agent import PredictionGameDRLAgent
 def main():
     # Set the inputs
     project_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    dataset_name = 'BTCUSDT_3000_days_5_min'
+    dataset_name = 'BTCUSDT_3000_days_1_min'
     dataset_path = os.path.join(
         project_path, 'datasets', dataset_name + '.bin')
     dataset_df = joblib.load(dataset_path)
     features = ['open', 'high', 'low', 'close', 'volume', 'bb_upper',
                 'bb_middle', 'bb_lower', 'macd', 'signal', 'rsi',  'stoch_k', 'stoch_d']
-    sampling_interval = 5
+    sampling_interval = 1
     resampling_interval = 5
     prediction_interval = 30
     ta_period = 14
@@ -45,7 +45,7 @@ def main():
     joblib.dump(env.get_scaler(), scaler_save_path, compress=True)
 
     # Train the agent on the environment
-    episodes = 1000
+    episodes = 10000
     batch_size = 64
     agent.train(env, episodes, batch_size,
                 eval_frequency=10, random_state=False)
