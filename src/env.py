@@ -1,3 +1,5 @@
+import gc
+import os
 import random
 import time
 import joblib
@@ -13,7 +15,7 @@ class PredictionGameEnvironment:
     A prediction game environment for the RL agent.
     """
 
-    def __init__(self, dataset_df, features, sampling_interval, resampling_interval, ta_period, window_size, prediction_period, episode_length, eval_episode_length, scaler_path=None, verbose=1, logging=False, log_path=None):
+    def __init__(self, dataset_df, features, sampling_interval, resampling_interval, prediction_interval, ta_period, window_size, episode_length, eval_episode_length, scaler_path=None, verbose=1, logging=False, log_path=None):
         """
         Initialize the environment.
 
@@ -22,9 +24,9 @@ class PredictionGameEnvironment:
             features (list): The list of features to use for training.
             sampling_interval (int): The interval used for sampling the dataset in minutes.
             resampling_interval (int): The interval used for resampling the dataset in minutes.
+            prediction_interval (int): The interval used for predicting the price in minutes.
             ta_period (int): The period used for calculating technical indicators.
             window_size (int): The size of the window for the state.
-            prediction_period (int): The period used for predicting the price.
             episode_length (int): The length of an episode.
             eval_episode_length (int): The length of the evaluation period.
             scaler_path (str): The path to the scaler file.
@@ -35,13 +37,17 @@ class PredictionGameEnvironment:
         self.features = features
         self.sampling_interval = sampling_interval
         self.resampling_interval = resampling_interval
+        self.resampling_factor = int(
+            self.resampling_interval / self.sampling_interval)
         price_idx = self.features.index('close')
         self.scaler = joblib.load(scaler_path) if scaler_path else None
         self.dataset, self.price_data = self.process_data(
             dataset_df, ta_period, price_idx)
         self.num_data = len(self.dataset)
+        self.prediction_interval = prediction_interval
+        self.prediction_interval_steps = int(
+            self.prediction_interval / self.sampling_interval)
         self.window_size = window_size
-        self.prediction_period = prediction_period
         self.episode_length = episode_length
         self.eval_episode_length = eval_episode_length
         self.action_space = [-1.0, 0.0, 1.0]
@@ -49,11 +55,14 @@ class PredictionGameEnvironment:
         self.prev_episode_lengths = deque(maxlen=25)
         self.verbose = verbose
         self.logging = logging
+        self.project_path = os.path.dirname(
+            os.path.dirname(os.path.abspath(__file__)))
+        timestr = time.strftime("%Y%m%d_%H%M%S")
         if log_path:
             self.log_path = log_path
         else:
-            self.log_path = '../log/env_log_' + \
-                time.strftime("%Y%m%d_%H%M%S") + '.txt'
+            self.log_path = os.path.join(
+                self.project_path, 'log', 'env_log_' + timestr + '.txt')
         if self.resampling_interval % self.sampling_interval != 0:
             raise ValueError(
                 'The sampling period must be a multiple of the interval!')
@@ -69,6 +78,7 @@ class PredictionGameEnvironment:
         Returns:
             state (np.ndarray): The initial state of the environment.
         """
+        # Reset the environment
         self.eval_episode = eval
         self.done = False
         self.step_count = 0
@@ -79,7 +89,10 @@ class PredictionGameEnvironment:
         self.current_price = None
         self.prediction_price = None
         self.action_results_count = [0.0, 0.0, 0.0]
-        self.state_id, self.state = self.update_state()
+        self.state_id, self.state = self.update_state(random_state=True)
+        # Collect the garbage
+        gc.collect()
+        # Return the initial state
         return self.state
 
     def process_data(self, dataset_df, ta_period, price_idx):
@@ -95,12 +108,12 @@ class PredictionGameEnvironment:
             dataset (np.ndarray): The processed and scaled dataset as a NumPy array.
             price_data (np.ndarray): The price data extracted from the dataset.
         """
-        if self.resampling_interval/self.sampling_interval > 1:
+        if self.resampling_factor > 1:
             # Create a list to store the sampled datasets
             sampled_dfs = []
 
             # Loop through the range(resampling_interval/interval) to generate sampled datasets
-            for i in range(self.resampling_interval/self.sampling_interval):
+            for i in range(self.resampling_factor):
                 # Sample the dataset
                 sampled_df = self.resample(
                     dataset_df.iloc[i::], str(self.resampling_interval) + 'T')
@@ -120,9 +133,10 @@ class PredictionGameEnvironment:
             processed_dataset_df = self.generate_technical_indicators(
                 processed_dataset_df, ta_period)
 
-        # Drop the first 5*ta_period*sample_period rows and the NaN values
-        num_drop = 5*ta_period*self.resampling_interval
+        # Drop the first 5*ta_period*resampling_factor rows to remove NaN values
+        num_drop = 5*ta_period*self.resampling_factor
         processed_dataset_df = processed_dataset_df.iloc[num_drop:]
+        # Drop any additional NaN values
         processed_dataset_df = processed_dataset_df.dropna()
 
         # Convert the dataset_df to a NumPy array and get the price data
@@ -165,33 +179,35 @@ class PredictionGameEnvironment:
         Returns:
             dataset_df (pd.DataFrame): The dataset with the technical indicators.
         """
-        dataset_df['sma'] = TA.SMA(dataset_df, ta_period)
-        dataset_df['ema'] = TA.EMA(dataset_df, ta_period)
-        dataset_df['dema'] = TA.DEMA(dataset_df, ta_period)
-        dataset_df['mom'] = TA.MOM(dataset_df, ta_period)
-        dataset_df['vzo'] = TA.VZO(dataset_df, ta_period)
-        dataset_df[['macd', 'signal']] = TA.MACD(dataset_df)
-        dataset_df['rsi'] = TA.RSI(dataset_df, ta_period)
+        # Generate technical indicators
         dataset_df[['bb_upper', 'bb_middle', 'bb_lower']
                    ] = TA.BBANDS(dataset_df, ta_period)
+        dataset_df[['macd', 'signal']] = TA.MACD(dataset_df)
+        dataset_df['rsi'] = TA.RSI(dataset_df, ta_period)
         dataset_df['stoch_k'] = TA.STOCH(dataset_df, ta_period)
         dataset_df['stoch_d'] = TA.STOCHD(dataset_df, ta_period)
-        dataset_df['er'] = TA.ER(dataset_df, ta_period)
-        dataset_df[['ppo', 'ppo_sig', 'ppo_hist']
-                   ] = TA.PPO(dataset_df, ta_period)
-        dataset_df['roc'] = TA.ROC(dataset_df, ta_period)
-        dataset_df['atr'] = TA.ATR(dataset_df, ta_period)
-        dataset_df['sar'] = TA.SAR(dataset_df, ta_period)
-        dataset_df[['mobo_upper', 'mobo_middle', 'mobo_lower']
-                   ] = TA.MOBO(dataset_df, ta_period)
-        dataset_df[['dip', 'din']] = TA.DMI(dataset_df, ta_period)
-        dataset_df[['tsi', 'tsi_signal']] = TA.TSI(dataset_df, ta_period)
-        dataset_df['tp'] = TA.TP(dataset_df)
-        dataset_df['adl'] = TA.ADL(dataset_df)
-        dataset_df[['basp_buy', 'basp_sell']] = TA.BASP(dataset_df, ta_period)
+        # Uncomment the following lines to add more technical indicators
+        # dataset_df['sma'] = TA.SMA(dataset_df, ta_period)
+        # dataset_df['ema'] = TA.EMA(dataset_df, ta_period)
+        # dataset_df['dema'] = TA.DEMA(dataset_df, ta_period)
+        # dataset_df['mom'] = TA.MOM(dataset_df, ta_period)
+        # dataset_df['vzo'] = TA.VZO(dataset_df, ta_period)
+        # dataset_df['er'] = TA.ER(dataset_df, ta_period)
+        # dataset_df[['ppo', 'ppo_sig', 'ppo_hist']
+        #            ] = TA.PPO(dataset_df, ta_period)
+        # dataset_df['roc'] = TA.ROC(dataset_df, ta_period)
+        # dataset_df['atr'] = TA.ATR(dataset_df, ta_period)
+        # dataset_df['sar'] = TA.SAR(dataset_df, ta_period)
+        # dataset_df[['mobo_upper', 'mobo_middle', 'mobo_lower']
+        #            ] = TA.MOBO(dataset_df, ta_period)
+        # dataset_df[['dip', 'din']] = TA.DMI(dataset_df, ta_period)
+        # dataset_df[['tsi', 'tsi_signal']] = TA.TSI(dataset_df, ta_period)
+        # dataset_df['tp'] = TA.TP(dataset_df)
+        # dataset_df['adl'] = TA.ADL(dataset_df)
+        # dataset_df[['basp_buy', 'basp_sell']] = TA.BASP(dataset_df, ta_period)
         return dataset_df
 
-    def step(self, action, random_state=True):
+    def step(self, action, random_state=False):
         """
         Perform one step in the environment.
 
@@ -211,7 +227,8 @@ class PredictionGameEnvironment:
         self.state_id, self.state = self.update_state(random_state)
         self.step_count += 1
         max_steps = self.episode_length if not self.eval_episode else self.eval_episode_length
-        if (self.step_count >= max_steps) or (self.balance <= 0):
+        max_state_id = self.num_data - self.prediction_interval_steps
+        if (self.step_count >= max_steps) or (self.state_id >= max_state_id) or (self.balance <= 0.0):
             self.done = True
             if not self.eval_episode:
                 self.prev_episode_lengths.append(self.step_count)
@@ -240,7 +257,7 @@ class PredictionGameEnvironment:
             raise ValueError('Invalid action!')
         else:
             self.action = action
-        prediction_id = self.state_id + self.prediction_period
+        prediction_id = self.state_id + self.prediction_interval_steps
         self.current_price = self.price_data[self.state_id]
         self.prediction_price = self.price_data[prediction_id]
         self.winning_action = np.sign(
@@ -256,7 +273,7 @@ class PredictionGameEnvironment:
             self.action_results_count[2] += 1
         return reward
 
-    def update_state(self, random_state=True):
+    def update_state(self, random_state=False):
         """
         Update the current state by randomly selecting a state within the data range.
 
@@ -269,13 +286,12 @@ class PredictionGameEnvironment:
         """
         if random_state:
             state_id = random.randrange(
-                self.window_size - 1, self.num_data - self.prediction_period)
+                self.resampling_factor * (self.window_size - 1), self.num_data - self.prediction_interval_steps)
         else:
-            state_id = max(self.window_size - 1, (self.state_id + 1) %
-                           (self.num_data - self.prediction_period))
-        start = state_id - self.window_size + 1
+            state_id = self.state_id + self.resampling_factor
+        start = state_id - self.resampling_factor * (self.window_size - 1)
         end = state_id + 1
-        state = self.dataset[start:end, :]
+        state = self.dataset[start:end:self.resampling_factor, :]
         return state_id, state
 
     def get_action_space(self):

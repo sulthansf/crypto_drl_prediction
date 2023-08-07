@@ -1,3 +1,4 @@
+import os
 import time
 import joblib
 import numpy as np
@@ -40,11 +41,14 @@ class PredictionGameDRLPlayer:
         self.action_space = action_space
         self.verbose = verbose
         self.logging = logging
+        self.project_path = os.path.dirname(
+            os.path.dirname(os.path.abspath(__file__)))
+        timestr = time.strftime("%Y%m%d_%H%M%S")
         if log_path:
             self.log_path = log_path
         else:
-            self.log_path = '../log/env_log_' + \
-                time.strftime("%Y%m%d_%H%M%S") + '.txt'
+            self.log_path = os.path.join(
+                self.project_path, 'log', 'player_log_' + timestr + '.txt')
 
         # Load the pre-trained Q-network
         self.q_network = tf.keras.models.load_model(q_network_path)

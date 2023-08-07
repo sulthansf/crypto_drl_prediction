@@ -1,4 +1,5 @@
 import gc
+import os
 import random
 import time
 import numpy as np
@@ -14,7 +15,6 @@ class ClearMemory(tf.keras.callbacks.Callback):
 
     def on_epoch_end(self, epoch, logs=None):
         gc.collect()
-        tf.keras.backend.clear_session()
 
 
 class PredictionGameDRLAgent:
@@ -48,16 +48,19 @@ class PredictionGameDRLAgent:
         self.verbose = verbose
         self.logging = logging
         self.auto_save = auto_save
+        self.project_path = os.path.dirname(
+            os.path.dirname(os.path.abspath(__file__)))
+        timestr = time.strftime("%Y%m%d_%H%M%S")
         if log_path:
             self.log_path = log_path
         else:
-            self.log_path = '../log/agent_log_' + \
-                time.strftime("%Y%m%d_%H%M%S") + '.txt'
+            self.log_path = os.path.join(
+                self.project_path, 'log', 'agent_log_' + timestr + '.txt')
         if save_path:
             self.save_path = save_path
         else:
-            self.save_path = '../models/q_network_' + \
-                time.strftime("%Y%m%d_%H%M%S") + '.keras'
+            self.save_path = os.path.join(
+                self.project_path, 'models', 'q_network_' + timestr + '.keras')
 
         # Create the Q-network and target Q-network
         self.q_network = self.create_q_network()
@@ -123,9 +126,9 @@ class PredictionGameDRLAgent:
         if exploration and np.random.rand() <= self.epsilon:
             return self.action_space[random.choice(range(self.num_actions))]
         else:
-            return self.action_space[np.argmax(self.q_network.predict(np.array([state]), verbose=0, callbacks=[ClearMemory()]))]
+            return self.action_space[np.argmax(self.q_network(np.array([state]), training=False).numpy()[0])]
 
-    def train(self, env, episodes, batch_size, eval_frequency=10):
+    def train(self, env, episodes, batch_size, eval_frequency=10, random_state=False):
         """
         Train the DRL agent on the environment.
 
@@ -141,13 +144,17 @@ class PredictionGameDRLAgent:
 
         # Train the agent on the environment
         for episode in range(episodes):
+            # Reset the environment
             state = env.reset()
             done = False
             total_reward = 0
 
+            # Collect the garbage
+            gc.collect()
+
             while not done:
                 action = self.choose_action(state)
-                next_state, reward, done = env.step(action)
+                next_state, reward, done = env.step(action, random_state)
                 total_reward += reward
 
                 replay_buffer.append((state, action, reward, next_state, done))
@@ -203,10 +210,8 @@ class PredictionGameDRLAgent:
         states = np.array(states)
         next_states = np.array(next_states)
 
-        current_q = self.q_network.predict(
-            states, verbose=0, callbacks=[ClearMemory()])
-        next_q = self.target_q_network.predict(
-            next_states, verbose=0, callbacks=[ClearMemory()])
+        current_q = self.q_network(states, training=False).numpy()
+        next_q = self.target_q_network(next_states, training=False).numpy()
 
         for i in range(batch_size):
             target = rewards[i]
@@ -218,7 +223,7 @@ class PredictionGameDRLAgent:
         self.q_network.fit(states, current_q, verbose=0,
                            callbacks=[ClearMemory()])
 
-    def evaluate(self, env, random_state=True):
+    def evaluate(self, env, random_state=False):
         """
         Evaluate the DRL agent on the environment for one episode.
 
@@ -228,9 +233,13 @@ class PredictionGameDRLAgent:
         Returns:
             evaluation_reward (float): The total reward obtained during the evaluation episode.
         """
+        # Reset the environment
         state = env.reset(eval=True)
         done = False
         evaluation_reward = 0
+
+        # Collect the garbage
+        gc.collect()
 
         while not done:
             action = self.choose_action(state, exploration=False)
@@ -278,9 +287,8 @@ class PredictionGameDRLAgent:
         Args:
             path (str): The path to load the agent from.
         """
-        q_network = tf.keras.models.load_model(path)
-        self.q_network.set_weights(q_network.get_weights())
-        self.target_q_network.set_weights(q_network.get_weights())
+        self.q_network = tf.keras.models.load_model(path)
+        self.target_q_network = tf.keras.models.load_model(path)
 
     def log(self, line):
         """
