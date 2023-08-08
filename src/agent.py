@@ -19,7 +19,7 @@ class ClearMemory(tf.keras.callbacks.Callback):
 
 
 class PredictionGameDRLAgent:
-    def __init__(self, state_shape, action_space, epsilon_initial=1.0, epsilon_decay=0.995, epsilon_min=0.01, gamma=0.99, update_frequency=10, verbose=1, logging=False, log_path=None, auto_save=True, save_path=None):
+    def __init__(self, state_shape, action_space, epsilon_initial=1.0, epsilon_decay=0.995, epsilon_min=0.01, gamma=0.99, update_frequency=10, verbose=1, logging=False, log_path=None, auto_save=True, save_path=None, save_frequency=500):
         """
         Initialize the DRL agent.
 
@@ -36,6 +36,7 @@ class PredictionGameDRLAgent:
             log_path (str): The path to the log file.
             auto_save (bool): Whether to automatically save the Q-network or not.
             save_path (str): The path to save the Q-network to.
+            save_frequency (int): The number of episodes between each save.
         """
         # Set the inputs
         self.state_shape = state_shape
@@ -49,6 +50,7 @@ class PredictionGameDRLAgent:
         self.verbose = verbose
         self.logging = logging
         self.auto_save = auto_save
+        self.save_frequency = save_frequency
         self.project_path = os.path.dirname(
             os.path.dirname(os.path.abspath(__file__)))
         timestr = time.strftime("%Y%m%d_%H%M%S")
@@ -141,7 +143,8 @@ class PredictionGameDRLAgent:
         """
         replay_buffer = deque(maxlen=250000)
         steps_since_update = 0
-        highest_evaluation_reward = 0
+        evaluation_rewards = deque(maxlen=10)
+        highest_mean_evaluation_reward = 0
 
         # Train the agent on the environment
         for episode in range(episodes):
@@ -177,6 +180,20 @@ class PredictionGameDRLAgent:
             if self.verbose > 1:
                 print(log_str)
 
+            # Save the Q-network every save_frequency episodes
+            if self.auto_save and (episode+1) % self.save_frequency == 0:
+                save_file, save_extension = os.path.splitext(
+                    self.save_path)
+                save_path = "{}_episode_{}{}".format(
+                    save_file, episode+1, save_extension)
+                self.save_q_network(save_path)
+                log_str = "=== Saved Q-Network at Episode: {} ===".format(
+                    episode+1)
+                if self.logging:
+                    self.log(log_str)
+                if self.verbose > 0:
+                    print(log_str)
+
             # Evaluate the agent every eval_frequency episodes
             if (episode + 1) % eval_frequency == 0:
                 evaluation_reward = self.evaluate(env)
@@ -186,12 +203,20 @@ class PredictionGameDRLAgent:
                     self.log(log_str)
                 if self.verbose > 0:
                     print(log_str)
-                if evaluation_reward > highest_evaluation_reward:
-                    highest_evaluation_reward = evaluation_reward
+
+                # Save the Q-network if the mean evaluation reward is higher
+                evaluation_rewards.append(evaluation_reward)
+                if np.mean(evaluation_rewards) > highest_mean_evaluation_reward:
+                    highest_mean_evaluation_reward = np.mean(
+                        evaluation_rewards)
                     if self.auto_save:
-                        self.save_q_network(self.save_path)
-                        log_str = "=== Saved Q-Network with Evaluation Reward: {} ===".format(
-                            evaluation_reward)
+                        save_file, save_extension = os.path.splitext(
+                            self.save_path)
+                        save_path = "{}_reward_{}{}".format(
+                            save_file, int(highest_mean_evaluation_reward), save_extension)
+                        self.save_q_network(save_path)
+                        log_str = "=== Saved Q-Network with Mean (10) Evaluation Reward: {} ===".format(
+                            highest_mean_evaluation_reward)
                         if self.logging:
                             self.log(log_str)
                         if self.verbose > 0:
