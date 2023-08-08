@@ -15,7 +15,7 @@ class PredictionGameEnvironment:
     A prediction game environment for the RL agent.
     """
 
-    def __init__(self, dataset_df, features, sampling_interval, resampling_interval, prediction_interval, ta_period, window_size, episode_length, eval_episode_length, scaler_path=None, verbose=1, logging=False, log_path=None):
+    def __init__(self, dataset_df, features, sampling_interval, resampling_interval, prediction_interval, state_increment, ta_period, window_size, episode_length, eval_episode_length, scaler_path=None, verbose=1, logging=False, log_path=None):
         """
         Initialize the environment.
 
@@ -25,6 +25,7 @@ class PredictionGameEnvironment:
             sampling_interval (int): The interval used for sampling the dataset in minutes.
             resampling_interval (int): The interval used for resampling the dataset in minutes.
             prediction_interval (int): The interval used for predicting the price in minutes.
+            state_increment (int): The increment used for updating the state.
             ta_period (int): The period used for calculating technical indicators.
             window_size (int): The size of the window for the state.
             episode_length (int): The length of an episode.
@@ -47,6 +48,7 @@ class PredictionGameEnvironment:
         self.prediction_interval = prediction_interval
         self.prediction_interval_steps = int(
             self.prediction_interval / self.sampling_interval)
+        self.state_increment = state_increment
         self.window_size = window_size
         self.episode_length = episode_length
         self.eval_episode_length = eval_episode_length
@@ -288,7 +290,7 @@ class PredictionGameEnvironment:
             state_id = random.randrange(
                 self.resampling_factor * (self.window_size - 1), self.num_data - self.prediction_interval_steps)
         else:
-            state_id = self.state_id + self.resampling_factor
+            state_id = self.state_id + self.state_increment
         start = state_id - self.resampling_factor * (self.window_size - 1)
         end = state_id + 1
         state = self.dataset[start:end:self.resampling_factor, :]
