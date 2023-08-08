@@ -127,8 +127,7 @@ class PredictionGameDRLAgent:
         if exploration and np.random.rand() <= self.epsilon:
             return self.action_space[random.choice(range(self.num_actions))]
         else:
-            state_tensor = tf.convert_to_tensor([state], dtype=tf.float32)
-            return self.action_space[np.argmax(self.q_network(state_tensor, training=False).numpy()[0])]
+            return self.action_space[np.argmax(self.q_network(np.array([state]), training=False).numpy()[0])]
 
     def train(self, env, episodes, batch_size, eval_frequency=10, random_state=False):
         """
@@ -210,8 +209,8 @@ class PredictionGameDRLAgent:
         batch = random.sample(replay_buffer, batch_size)
         states, actions, rewards, next_states, dones = zip(*batch)
 
-        states = tf.convert_to_tensor(states, dtype=tf.float32)
-        next_states = tf.convert_to_tensor(next_states, dtype=tf.float32)
+        states = np.array(states)
+        next_states = np.array(next_states)
 
         current_q = self.q_network(states, training=False).numpy()
         next_q = self.target_q_network(next_states, training=False).numpy()
