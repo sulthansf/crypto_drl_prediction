@@ -15,7 +15,6 @@ class ClearMemory(tf.keras.callbacks.Callback):
 
     def on_epoch_end(self, epoch, logs=None):
         gc.collect()
-        tf.keras.backend.clear_session()
 
 
 class PredictionGameDRLAgent:
@@ -127,8 +126,7 @@ class PredictionGameDRLAgent:
         if exploration and np.random.rand() <= self.epsilon:
             return self.action_space[random.choice(range(self.num_actions))]
         else:
-            return self.action_space[np.argmax(self.q_network.predict_on_batch(np.array([state]))[0])]
-            # return self.action_space[np.argmax(self.q_network(np.array([state]), training=False).numpy()[0])]
+            return self.action_space[np.argmax(self.q_network(np.array([state]), training=False).numpy()[0])]
 
     def train(self, env, episodes, batch_size, eval_frequency=10, random_state=False):
         """
@@ -155,7 +153,7 @@ class PredictionGameDRLAgent:
             gc.collect()
 
             while not done:
-                action = self.choose_action(state, exploration=False)
+                action = self.choose_action(state)
                 next_state, reward, done = env.step(action, random_state)
                 total_reward += reward
 
@@ -212,10 +210,8 @@ class PredictionGameDRLAgent:
         states = np.array(states)
         next_states = np.array(next_states)
 
-        current_q = self.q_network.predict_on_batch(states)
-        next_q = self.target_q_network.predict_on_batch(next_states)
-        # current_q = self.q_network(states, training=False).numpy()
-        # next_q = self.target_q_network(next_states, training=False).numpy()
+        current_q = self.q_network(states, training=False).numpy()
+        next_q = self.target_q_network(next_states, training=False).numpy()
 
         for i in range(batch_size):
             target = rewards[i]
