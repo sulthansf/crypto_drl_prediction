@@ -39,8 +39,8 @@ def main():
     action_space = env.get_action_space()
 
     # Create the agent
-    agent = PredictionGameDRLAgent(state_shape, action_space, epsilon_initial=1.0, epsilon_decay=0.995, epsilon_min=0.01, gamma=0.99,
-                                   update_frequency=32, verbose=2, logging=True, log_path=agent_log_path, auto_save=True, save_path=q_network_save_path)
+    agent = PredictionGameDRLAgent(state_shape, action_space, epsilon_initial=1.0, epsilon_decay=0.9975, epsilon_min=0.01, gamma=0.99,
+                                   update_frequency=8, verbose=2, logging=True, log_path=agent_log_path, auto_save=True, save_path=q_network_save_path, save_frequency=500)
 
     # Save scaler
     joblib.dump(env.get_scaler(), scaler_save_path, compress=True)
