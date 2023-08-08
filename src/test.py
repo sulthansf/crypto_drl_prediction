@@ -22,6 +22,7 @@ def main():
     sampling_interval = 5
     resampling_interval = 5
     prediction_interval = 30
+    state_increment = 1
     ta_period = 14
     window_size = 36
     episode_length = 1000
@@ -34,8 +35,8 @@ def main():
         project_path, 'log', 'env_log_' + timestr + '.txt')
 
     # Create the environment
-    env = PredictionGameEnvironment(dataset_df, features, sampling_interval, resampling_interval, prediction_interval, ta_period,
-                                    window_size, episode_length, test_episode_length, scaler_path=scaler_path, verbose=2, logging=True, log_path=env_log_path)
+    env = PredictionGameEnvironment(dataset_df, features, sampling_interval, resampling_interval, prediction_interval, state_increment,
+                                    ta_period, window_size, episode_length, test_episode_length, scaler_path=scaler_path, verbose=2, logging=True, log_path=env_log_path)
     action_space = env.get_action_space()
 
     # Create the agent
