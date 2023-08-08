@@ -135,8 +135,8 @@ class PredictionGameDRLPlayer:
         dataset_df[['basp_buy', 'basp_sell']] = TA.BASP(dataset_df, ta_period)
         num_drop = ta_period
         dataset_df = dataset_df.iloc[num_drop:]
-        dataset = dataset_df[self.features].to_numpy().astype(np.float32)
-        dataset_scaled = self.scaler.transform(dataset).astype(np.float32)
+        dataset = dataset_df[self.features].to_numpy()
+        dataset_scaled = self.scaler.transform(dataset)
         return dataset_scaled
 
     def sample_data(self, dataset_df):

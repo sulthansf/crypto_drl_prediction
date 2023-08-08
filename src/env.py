@@ -142,17 +142,15 @@ class PredictionGameEnvironment:
         processed_dataset_df = processed_dataset_df.dropna()
 
         # Convert the dataset_df to a NumPy array and get the price data
-        dataset = processed_dataset_df[self.features].to_numpy().astype(
-            np.float32)
+        dataset = processed_dataset_df[self.features].to_numpy()
         price_data = dataset[:, price_idx]
 
         # Scale the dataset
         if not self.scaler:
             self.scaler = RobustScaler()
-            dataset_scaled = self.scaler.fit_transform(
-                dataset).astype(np.float32)
+            dataset_scaled = self.scaler.fit_transform(dataset)
         else:
-            dataset_scaled = self.scaler.transform(dataset).astype(np.float32)
+            dataset_scaled = self.scaler.transform(dataset)
         return dataset_scaled, price_data
 
     def resample(self, df: pd.DataFrame, interval: str) -> pd.DataFrame:
