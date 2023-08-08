@@ -152,7 +152,6 @@ class PredictionGameDRLAgent:
 
             # Collect the garbage
             gc.collect()
-            tf.keras.backend.clear_session()
 
             while not done:
                 action = self.choose_action(state)
@@ -242,7 +241,6 @@ class PredictionGameDRLAgent:
 
         # Collect the garbage
         gc.collect()
-        tf.keras.backend.clear_session()
 
         while not done:
             action = self.choose_action(state, exploration=False)
