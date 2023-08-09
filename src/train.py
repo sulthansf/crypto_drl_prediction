@@ -15,11 +15,11 @@ def main():
     features = ['open', 'high', 'low', 'close', 'volume', 'bb_upper',
                 'bb_middle', 'bb_lower', 'macd', 'signal', 'rsi',  'stoch_k', 'stoch_d']
     sampling_interval = 1
-    resampling_interval = 5
+    resampling_interval = 15
     prediction_interval = 30
-    state_increment = 5
+    state_increment = 15
     ta_period = 14
-    window_size = 36
+    window_size = 12
     episode_length = 1000
     eval_episode_length = 10000
     state_shape = (window_size, len(features))
