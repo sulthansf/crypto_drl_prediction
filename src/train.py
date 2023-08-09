@@ -17,7 +17,7 @@ def main():
     sampling_interval = 1
     resampling_interval = 5
     prediction_interval = 30
-    state_increment = 1
+    state_increment = 5
     ta_period = 14
     window_size = 36
     episode_length = 1000
