@@ -8,16 +8,6 @@ from tensorflow.keras import layers
 from collections import deque
 
 
-class ClearMemory(tf.keras.callbacks.Callback):
-    """
-    Clear the memory after each epoch.
-    """
-
-    def on_epoch_end(self, epoch, logs=None):
-        gc.collect()
-        tf.keras.backend.clear_session()
-
-
 class PredictionGameDRLAgent:
     def __init__(self, state_shape, action_space, epsilon_initial=1.0, epsilon_decay=0.995, epsilon_min=0.01, gamma=0.99, update_frequency=10, verbose=1, logging=False, log_path=None, auto_save=True, save_path=None, save_frequency=500):
         """
@@ -246,8 +236,7 @@ class PredictionGameDRLAgent:
 
             current_q[i][self.action_space.index(actions[i])] = target
 
-        self.q_network.fit(states, current_q, batch_size=batch_size,
-                           verbose=0, callbacks=[ClearMemory()])
+        self.q_network.train_on_batch(states, current_q)
 
     def evaluate(self, env, random_state=False):
         """
@@ -263,9 +252,6 @@ class PredictionGameDRLAgent:
         state = env.reset(eval=True)
         done = False
         evaluation_reward = 0
-
-        # Collect the garbage
-        gc.collect()
 
         while not done:
             action = self.choose_action(state, exploration=False)
@@ -289,6 +275,9 @@ class PredictionGameDRLAgent:
         """
         # Test the agent on the environment
         for episode in range(episodes):
+            # Collect the garbage
+            gc.collect()
+            # Evaluate the agent
             test_reward = self.evaluate(env, random_state)
             log_str = "Test Episode: {}/{} | Episode Reward: {}".format(
                 episode+1, episodes, test_reward)
