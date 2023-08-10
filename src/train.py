@@ -22,6 +22,7 @@ def main():
     window_size = 30
     episode_length = 1000
     eval_episode_length = 10000
+    reward_space = [-1.0, 0.0, 0.5]
     state_shape = (window_size, len(features))
     timestr = time.strftime("%Y%m%d_%H%M%S")
     scaler_save_path = os.path.join(
@@ -35,7 +36,7 @@ def main():
 
     # Create the environment
     env = PredictionGameEnvironment(dataset_df, features, sampling_interval, resampling_interval, prediction_interval, state_increment,
-                                    ta_period, window_size, episode_length, eval_episode_length, scaler_path=None, verbose=2, logging=True, log_path=env_log_path)
+                                    ta_period, window_size, episode_length, eval_episode_length, reward_space=reward_space, scaler_path=None, verbose=2, logging=True, log_path=env_log_path)
     action_space = env.get_action_space()
 
     # Create the agent
