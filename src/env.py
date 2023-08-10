@@ -15,7 +15,7 @@ class PredictionGameEnvironment:
     A prediction game environment for the RL agent.
     """
 
-    def __init__(self, dataset_df, features, sampling_interval, resampling_interval, prediction_interval, state_increment, ta_period, window_size, episode_length, eval_episode_length, scaler_path=None, verbose=1, logging=False, log_path=None):
+    def __init__(self, dataset_df, features, sampling_interval, resampling_interval, prediction_interval, state_increment, ta_period, window_size, episode_length, eval_episode_length, action_space = [-1.0, 0.0, 1.0], reward_space = [-1.0, 0.0, 0.7], scaler_path=None, verbose=1, logging=False, log_path=None):
         """
         Initialize the environment.
 
@@ -30,6 +30,8 @@ class PredictionGameEnvironment:
             window_size (int): The size of the window for the state.
             episode_length (int): The length of an episode.
             eval_episode_length (int): The length of the evaluation period.
+            action_space (list): The available actions.
+            reward_space (list): The available rewards.
             scaler_path (str): The path to the scaler file.
             verbose (int): The verbosity level (0, 1 or 2).
             logging (bool): Indicates whether to log the training process.
@@ -52,8 +54,8 @@ class PredictionGameEnvironment:
         self.window_size = window_size
         self.episode_length = episode_length
         self.eval_episode_length = eval_episode_length
-        self.action_space = [-1.0, 0.0, 1.0]
-        self.reward_space = [-1.0, 0.0, 0.7]
+        self.action_space = action_space
+        self.reward_space = reward_space
         self.prev_episode_lengths = deque(maxlen=25)
         self.verbose = verbose
         self.logging = logging
